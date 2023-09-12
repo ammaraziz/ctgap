@@ -1,0 +1,6 @@
+name: skip_misc
+channels:
+  - bioconda
+dependencies:
+  - fastp
+  - multiqc

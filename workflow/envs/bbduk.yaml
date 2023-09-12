@@ -1,0 +1,5 @@
+name: skip_bbduk
+channels:
+  - bioconda
+dependencies:
+  - bbmap

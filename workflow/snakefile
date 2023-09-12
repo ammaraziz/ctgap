@@ -1,0 +1,189 @@
+from pathlib import Path
+import snakemake
+
+indir = Path("input/")
+outdir = Path("results/")
+
+SAMPLE_NAME, PAIR = glob_wildcards(indir / "{sample_name}_{pair}.fastq.gz")
+SAMPLES = set(SAMPLE_NAME)
+print(SAMPLES)
+
+rule all:
+	input:
+		expand(outdir / "trim" / "{sample}_clean_{pair}.fastq.gz", pair = ["R1", "R2"], sample = SAMPLES),
+		expand(outdir / "split" / "{sample}.human.fastq.gz", sample = SAMPLES),
+		expand(outdir / "qc" / "{sample}.{type}.{ext}", sample = SAMPLES, type = ['clean', 'raw'], ext = ['fastp.json', 'html']),
+		expand("resources/Ct_ref_genome.{part}.bt2", part = ["1","2","3","4","rev1", "rev2"]),
+		expand(outdir / "mapping" / "{sample}.bam", sample = SAMPLES),
+		expand(outdir / "mapping" / "{sample}.unmapped.fastq.gz", sample = SAMPLES),
+		expand(outdir / "converage" / "{sample}.coverage.txt", sample = SAMPLES),
+		expand(outdir / "assembly" / "{sample}", sample = SAMPLES),
+		report = outdir / "qc" / "multiqc_report.html",
+
+rule trim:
+	input:
+		r1 = indir / "{sample}_R1.fastq.gz",
+		r2 = indir / "{sample}_R2.fastq.gz",
+	output:
+		r1 = outdir / "trim" / "{sample}_clean_R1.fastq.gz",
+		r2 = outdir / "trim" / "{sample}_clean_R2.fastq.gz",
+	params:
+		adapters = "resources/adapters.fasta",
+		barcodes = "resources/MSS_barcodes.fasta",
+		trimq = 10,
+	threads: 4
+	conda: "envs/bbduk.yaml"
+	log: outdir / "log" / "{sample}.trim.log"
+	shell:"""
+
+	bbduk.sh \
+	in1={input.r1} \
+	in2={input.r2} \
+	out1={output.r1} \
+	out2={output.r2} \
+	ref={params.adapters} \
+	barcodes={params.barcodes} \
+	ktrim=r tpe tbo qtrim=rl \
+	trimq={params.trimq} 2> {log}
+	"""
+
+rule split:
+	input:
+		r1 = rules.trim.output.r1,
+		r2 = rules.trim.output.r2,
+	output:
+		human = outdir / "split" / "{sample}.human.fastq.gz"
+	params:
+		ref = "resources/GRCh38.fasta",
+		nonhuman = lambda wildcards: outdir / "split" / f"{wildcards.sample}_nonhuman_#.fastq.gz"
+	threads: 4
+	conda: "envs/bbduk.yaml"
+	log: outdir / "log" / "{sample}.split.log"
+	shell:"""
+	bbsplit.sh \
+	in1={input.r1} \
+	in2={input.r2} \
+	ref={params.ref} \
+	ambig2=all \
+	threads={threads} \
+	outm={output.human} \
+	outu={params.nonhuman} 2> {log}
+	"""
+
+rule qc:
+	input:
+		r1_raw = indir / "{sample}_R1.fastq.gz",
+		r2_raw = indir / "{sample}_R2.fastq.gz",
+		r1_clean = rules.trim.output.r1,
+		r2_clean = rules.trim.output.r2,
+	output:
+		html_clean = outdir / "qc" / "{sample}.clean.html",
+		html_raw = outdir / "qc" / "{sample}.raw.html",
+		json_clean = outdir / "qc" / "{sample}.clean.fastp.json",
+		json_raw = outdir / "qc" / "{sample}.raw.fastp.json",
+	conda: "envs/misc.yaml"
+	log:
+		raw = outdir / "log" / "{sample}.fastp.log",
+		clean = outdir / "log" / "{sample}.fastp.log",
+	shell:"""
+	fastp \
+	-i {input.r1_clean} \
+	-I {input.r2_clean} \
+	-h {output.html_clean} \
+	-j {output.json_clean} 2> {log.clean}
+
+	fastp \
+	-i {input.r1_raw} \
+	-I {input.r2_raw} \
+	-h {output.html_raw} \
+	-j {output.json_raw} 2> {log.raw}
+	"""
+
+rule multiqc:
+	input:
+		json = expand(outdir / "qc" / "{sample}.clean.fastp.json", sample = SAMPLES)
+	output:
+		report = outdir / "qc" / "multiqc_report.html"
+	params:
+		fastp_dir = outdir / "qc"
+	log: outdir / "log" / "multiqc.log",
+	conda: "envs/misc.yaml",
+	shell:"""
+	multiqc {params.fastp_dir} -n {output.report} 2> {log}
+	"""
+
+# are the reads here interleaved? bbsplit outputs r1 and r2.
+rule spades:
+	input:
+		human = rules.split.output.human
+	output:
+		assembly = directory(outdir / "assembly" / "{sample}")
+	params:
+		clean_r1 = outdir / "split" / "{sample}_nonhuman_1.fastq.gz",
+		clean_r2 = outdir / "split" / "{sample}_nonhuman_2.fastq.gz"
+	threads: 4
+	conda: "envs/spades.yaml"
+	log: outdir / "log" / "{sample}.spades.logs"
+	shell:"""
+	spades.py \
+	--careful \
+	--threads {threads} \
+	--pe1-1 {params.clean_r1} \
+	--pe1-2 {params.clean_r2} \
+	-o {output.assembly} 2> {log}
+	"""
+
+rule index:
+	input:
+		reference = "resources/Ct_ref.fasta"
+	output:
+		#expand(outdir / "index" / "Ct_ref_genome.{part}.bt2", part = [1,2,3,4,"rev1", "rev2"])
+		output1 = "resources/Ct_ref_genome.1.bt2",
+		output2 = "resources/Ct_ref_genome.2.bt2",
+		output3 = "resources/Ct_ref_genome.3.bt2",
+		output4 = "resources/Ct_ref_genome.4.bt2",
+		outputrev1= "resources/Ct_ref_genome.rev1.bt2",
+		outputrev2= "resources/Ct_ref_genome.rev2.bt2",
+	params:
+		prefix = "resources/Ct_ref_genome"
+	conda: "envs/bowtie.yaml"
+	log: outdir / "log" / "Ct_ref.index.log"
+	shell:"""
+	bowtie2-build {input.reference} {params.prefix} 2> {log}
+	"""
+
+# why is --local specified here? end to end is generally better
+rule align2concat:
+	input:
+		human = outdir / "split" / "{sample}.human.fastq.gz"
+	output:
+		clean_r1 = outdir / "split" / "{sample}_nonhuman_1.fastq.gz",
+		clean_r2 = outdir / "split" / "{sample}_nonhuman_2.fastq.gz",
+		bam = outdir / "mapping" / "{sample}.bam",
+		unaligned = outdir / "mapping" / "{sample}.unmapped.fastq.gz",
+		coverage = outdir / "converage" / "{sample}.coverage.txt"
+	threads: 4
+	params:
+		prefix = outdir / "Ct_ref_genome"
+	conda: "envs/bowtie.yaml"
+	log: outdir / "log" / "{sample}.align2concat.log"
+	shell:"""
+	bowtie2 -x \
+	{params.prefix} \
+	-1 {params.clean_r1} \
+	-2 {params.clean_r2}\
+	-U {output.unaligned} \
+	--local \
+	--threads {threads} | \
+	samtools view -bSh - | \
+	samtools sort -@{threads} \
+	-o {output.bam} \
+	2> {log}
+
+	samtools index {output.bam}
+	samtools coverage {output.bam} > {output.converage}
+	"""
+
+
+
+

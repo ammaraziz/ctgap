@@ -1,0 +1,7 @@
+name: skip_bowtie
+channels:
+  - bioconda
+dependencies:
+  - bowtie2
+  - samtools
+  - bcftools

@@ -1,0 +1,7 @@
+.DS_Store
+.snakemake/*
+resources/GRCh38.fasta
+resources/*.bt2.tmp
+resources/*.rev.*.bt2
+input/*.fastq.gz
+config/*.txt
