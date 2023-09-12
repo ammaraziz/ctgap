@@ -25,8 +25,10 @@ mamba install -c bioconda snakemake
 
 1. Create a folder `skip/input/`
 2. Add your fastq.gz files in `skip/input/`. 
+
 	- Ensure they're named as follows: `{sample_name}_{direction}.fastq.gz`. 
         - eg `SRR12345_R1.fastq.gz` and `SRR12345_R2.fastq.gz`.
+
 3. In `skip/` folder run the pipeline:
 ```
 snakemake -j 8 --use-conda -k
