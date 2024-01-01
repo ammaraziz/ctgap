@@ -1,0 +1,18 @@
+outdir: /Users/aaziz/Downloads/ctgap_output
+
+samples: config/samples.tsv
+adapters: resources/adapters.fasta
+ctReference: resources/ctReferences.fasta
+homoReference: resources/grch38.fasta.gz
+krakenDB: resources/standardDB
+use_conda: true
+
+threads:
+  fastp: 10
+  scurbby: 10
+  bowtie: 10
+  shovill: 10
+  spades: 10
+  samtools: 5
+  bbnorm: 10
+  

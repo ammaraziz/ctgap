@@ -1,0 +1,5 @@
+name: skip_spades
+channels:
+  - bioconda
+dependencies:
+  - bbmap

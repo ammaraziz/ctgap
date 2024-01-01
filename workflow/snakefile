@@ -1,129 +1,188 @@
 from pathlib import Path
-import snakemake
+import sys
+configfile: "config/config.yaml"
 
-indir = Path("input/")
-outdir = Path("results/")
+INDIR = Path("/Users/aaziz/Downloads/ctgap_input")
+OUTDIR = Path(config["outdir"])
+KRAKENDB = config["krakenDB"]
+HUMANREF = config["homoReference"]
+CTREF = config["ctReference"]
+ADAPTERS = config["adapters"]
 
-SAMPLE_NAME, PAIR = glob_wildcards(indir / "{sample_name}_{pair}.fastq.gz")
+SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
 SAMPLES = set(SAMPLE_NAME)
-print(SAMPLES)
+if not SAMPLES:
+	print("No input samples were detected. Check the files are named properly: {sample_name}_{pair}")
+	sys.exit()
 
 rule all:
 	input:
-		expand(outdir / "trim" / "{sample}_clean_{pair}.fastq.gz", pair = ["R1", "R2"], sample = SAMPLES),
-		expand(outdir / "split" / "{sample}.human.fastq.gz", sample = SAMPLES),
-		expand(outdir / "qc" / "{sample}.{type}.{ext}", sample = SAMPLES, type = ['clean', 'raw'], ext = ['fastp.json', 'html']),
-		expand("resources/Ct_ref_genome.{part}.bt2", part = ["1","2","3","4","rev1", "rev2"]),
-		expand(outdir / "mapping" / "{sample}.bam", sample = SAMPLES),
-		expand(outdir / "mapping" / "{sample}.unmapped.fastq.gz", sample = SAMPLES),
-		expand(outdir / "converage" / "{sample}.coverage.txt", sample = SAMPLES),
-		expand(outdir / "assembly" / "{sample}", sample = SAMPLES),
-		report = outdir / "qc" / "multiqc_report.html",
+		expand(OUTDIR / "status" / "trim.{sample}.txt", sample = SAMPLES),
+		expand(OUTDIR / "status" / "scrub.{sample}.txt", sample = SAMPLES),
+		expand(OUTDIR / "status" / "trim.scrub.{sample}.txt", sample = SAMPLES),
+		#expand(OUTDIR / "status" / "normalise.{sample}.txt", sample = SAMPLES),
+		expand(OUTDIR / "status" / "shovill.{sample}.txt", sample = SAMPLES),
+		# expand(OUTDIR / "status" / "spades.{sample}.txt", sample = SAMPLES),
+		# OUTDIR / "qc" / "multiqc_report.html",
 
-rule trim:
+rule fastp:
 	input:
-		r1 = indir / "{sample}_R1.fastq.gz",
-		r2 = indir / "{sample}_R2.fastq.gz",
+		r1 = INDIR / "{sample}_R1.fastq.gz",
+		r2 = INDIR / "{sample}_R2.fastq.gz",
 	output:
-		r1 = outdir / "trim" / "{sample}_clean_R1.fastq.gz",
-		r2 = outdir / "trim" / "{sample}_clean_R2.fastq.gz",
+		r1 = OUTDIR / "{sample}" / "trim" / "{sample}_trim_R1.fastq.gz",
+		r2 = OUTDIR / "{sample}" / "trim" / "{sample}_trim_R2.fastq.gz",
+		html = OUTDIR / "{sample}" / "trim" /"{sample}.html",
+		json = OUTDIR / "{sample}" / "trim" /"{sample}.json",
+		status = OUTDIR / "status" / "trim.{sample}.txt",
 	params:
 		adapters = "resources/adapters.fasta",
 		barcodes = "resources/MSS_barcodes.fasta",
-		trimq = 10,
-	threads: 4
-	conda: "envs/bbduk.yaml"
-	log: outdir / "log" / "{sample}.trim.log"
+		window_size = 1,
+		mean_quality = 3,
+		right_window_size = 4,
+		right_mean_quality=15,
+	threads: 12
+	conda: "envs/trim.yaml"
+	log: OUTDIR / "log" / "trim.{sample}.log"
 	shell:"""
+	fastp \
+	-i {input.r1} \
+	-I {input.r2} \
+	-o {output.r1} \
+	-O {output.r2} \
+	-h {output.html} \
+	-j {output.json} \
+	--detect_adapter_for_pe \
+	--cut_front \
+	--cut_front_window_size={params.window_size} \
+	--cut_front_mean_quality={params.mean_quality} \
+	--cut_tail \
+	--cut_tail_window_size={params.window_size} \
+	--cut_tail_mean_quality={params.mean_quality} \
+	--cut_right \
+	--cut_right_window_size={params.right_window_size} \
+	--cut_right_mean_quality={params.right_mean_quality} \
+	--thread {threads} 2> {log}
 
-	bbduk.sh \
+	touch {output.status}
+	"""
+
+rule scrub:
+	input:
+		r1 = rules.fastp.output.r1,
+		r2 = rules.fastp.output.r2,
+	output:
+		r1 = OUTDIR / "{sample}" / "scrub" / "{sample}_trim_scrub_R1.fastq.gz",
+		r2 = OUTDIR / "{sample}" / "scrub" / "{sample}_trim_scrub_R2.fastq.gz",
+		status = OUTDIR / "status" / "scrub.{sample}.txt",
+	params:
+		db = KRAKENDB,
+		human = HUMANREF,
+		minlen = 50,
+		workdir =  OUTDIR / "{sample}" / "scrub" / "workdir"
+	threads: 20
+	conda: "envs/scrub.yaml"
+	log: OUTDIR / "log" / "{sample}.scrub.log"
+	shell:"""
+	scrubby scrub-reads \
+	-i {input.r1} {input.r2} \
+	-o {output.r1} {output.r2} \
+	--kraken-db {params.db} \
+	--kraken-taxa "Archaea Eukaryota Holozoa Nucletmycea" \
+	--min-len {params.minlen} \
+	--minimap2-index {params.human} \
+	--workdir {params.workdir} \
+	--kraken-threads {threads} 2> {log}	
+
+	touch {output.status}
+	"""
+
+rule fastp_qc:
+	input:
+		r1 = rules.scrub.output.r1,
+		r2 = rules.scrub.output.r2,
+	output:
+		html = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub.html",
+		json = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub.json",
+		status = OUTDIR / "status" / "trim.scrub.{sample}.txt",
+	threads: 12
+	conda: "envs/trim.yaml"
+	log: OUTDIR / "log" / "trim.scrub.{sample}.log"
+	shell:"""
+	fastp \
+	-i {input.r1} \
+	-I {input.r2} \
+	-h {output.html} \
+	-j {output.json} \
+	--thread {threads} 2> {log}
+
+	touch {output.status}
+	"""
+
+rule normalise:
+	input:
+		r1 = rules.scrub.output.r1,
+		r2 = rules.scrub.output.r2,
+	output:
+		r1 = OUTDIR / "{sample}" / "normalised" / "{sample}_trim_scrub_norm_R1.fastq.gz",
+		r2 = OUTDIR / "{sample}" / "normalised" / "{sample}_trim_scrub_norm_R2.fastq.gz",
+		status = OUTDIR / "status" / "normalise.{sample}.txt"
+	params:
+		target = 100,
+		minimum = 5,
+	conda: "envs/normalise.yaml"
+	log: OUTDIR / "log" / "normalise.{sample}.log"
+	threads: 10
+	shell:"""
+	bbnorm.sh \
 	in1={input.r1} \
 	in2={input.r2} \
 	out1={output.r1} \
 	out2={output.r2} \
-	ref={params.adapters} \
-	barcodes={params.barcodes} \
-	ktrim=r tpe tbo qtrim=rl \
-	trimq={params.trimq} 2> {log}
-	"""
-
-rule split:
-	input:
-		r1 = rules.trim.output.r1,
-		r2 = rules.trim.output.r2,
-	output:
-		human = outdir / "split" / "{sample}.human.fastq.gz"
-	params:
-		ref = "resources/GRCh38.fasta",
-		nonhuman = lambda wildcards: outdir / "split" / f"{wildcards.sample}_nonhuman_#.fastq.gz"
-	threads: 4
-	conda: "envs/bbduk.yaml"
-	log: outdir / "log" / "{sample}.split.log"
-	shell:"""
-	bbsplit.sh \
-	in1={input.r1} \
-	in2={input.r2} \
-	ref={params.ref} \
-	ambig2=all \
+	target={params.target} \
 	threads={threads} \
-	outm={output.human} \
-	outu={params.nonhuman} 2> {log}
+	min={params.minimum} 2> {log}
+
+	touch {output.status}
 	"""
 
-rule qc:
+rule shovill:
 	input:
-		r1_raw = indir / "{sample}_R1.fastq.gz",
-		r2_raw = indir / "{sample}_R2.fastq.gz",
-		r1_clean = rules.trim.output.r1,
-		r2_clean = rules.trim.output.r2,
+		r1 = rules.scrub.output.r1,
+		r2 = rules.scrub.output.r2,
 	output:
-		html_clean = outdir / "qc" / "{sample}.clean.html",
-		html_raw = outdir / "qc" / "{sample}.raw.html",
-		json_clean = outdir / "qc" / "{sample}.clean.fastp.json",
-		json_raw = outdir / "qc" / "{sample}.raw.fastp.json",
-	conda: "envs/misc.yaml"
-	log:
-		raw = outdir / "log" / "{sample}.fastp.log",
-		clean = outdir / "log" / "{sample}.fastp.log",
-	shell:"""
-	fastp \
-	-i {input.r1_clean} \
-	-I {input.r2_clean} \
-	-h {output.html_clean} \
-	-j {output.json_clean} 2> {log.clean}
-
-	fastp \
-	-i {input.r1_raw} \
-	-I {input.r2_raw} \
-	-h {output.html_raw} \
-	-j {output.json_raw} 2> {log.raw}
-	"""
-
-rule multiqc:
-	input:
-		json = expand(outdir / "qc" / "{sample}.clean.fastp.json", sample = SAMPLES)
-	output:
-		report = outdir / "qc" / "multiqc_report.html"
+		status = OUTDIR / "status" / "shovill.{sample}.txt",
+		outdir = directory(OUTDIR / "{sample}" / "shovill"),
 	params:
-		fastp_dir = outdir / "qc"
-	log: outdir / "log" / "multiqc.log",
-	conda: "envs/misc.yaml",
+		gsize = "1.04M",
+		depth = 200,
+	conda: "envs/shovill.yaml"
+	log: OUTDIR / "log" / "shovill.{sample}.log"
+	threads: 8
 	shell:"""
-	multiqc {params.fastp_dir} -n {output.report} 2> {log}
+	shovill \
+	--R1 {input.r1} \
+	--R2 {input.r2} \
+	--outdir {output.outdir} \
+	--gsize {params.gsize} \
+	--depth {params.depth} \
+	--cpus {threads} 2> {log}
+
+	touch {output.status}
 	"""
 
 # are the reads here interleaved? bbsplit outputs r1 and r2.
 rule spades:
 	input:
-		human = rules.split.output.human
+		r1 = rules.scrub.output.r1,
+		r2 = rules.scrub.output.r2,
 	output:
-		assembly = directory(outdir / "assembly" / "{sample}")
-	params:
-		clean_r1 = outdir / "split" / "{sample}_nonhuman_1.fastq.gz",
-		clean_r2 = outdir / "split" / "{sample}_nonhuman_2.fastq.gz"
-	threads: 4
-	conda: "envs/spades.yaml"
-	log: outdir / "log" / "{sample}.spades.logs"
+		assembly = directory(OUTDIR / "{sample}" / "spades"),
+		status = OUTDIR / "status" / "spades.{sample}.txt"
+	threads: 12
+	conda: "envs/shovill.yaml"
+	log: OUTDIR / "log" / "spades.{sample}.logs"
 	shell:"""
 	spades.py \
 	--careful \
@@ -133,57 +192,85 @@ rule spades:
 	-o {output.assembly} 2> {log}
 	"""
 
+rule multiqc:
+	input:
+		status_spades = expand(OUTDIR / "status" / "spades.{sample}.txt", sample = SAMPLES),
+		status_shovill = expand(OUTDIR / "status" / "shovill.{sample}.txt", sample = SAMPLES)
+	output:
+		report = OUTDIR / "multiqc_report.html"
+	params:
+		fastp_dir = OUTDIR / "qc"
+	log: OUTDIR / "log" / "multiqc.log",
+	conda: "envs/misc.yaml",
+	shell:"""
+	multiqc {params.fastp_dir} -n {output.report} 2> {log}
+	"""
+
 rule index:
 	input:
-		reference = "resources/Ct_ref.fasta"
+		reference = CTREF
 	output:
-		#expand(outdir / "index" / "Ct_ref_genome.{part}.bt2", part = [1,2,3,4,"rev1", "rev2"])
-		output1 = "resources/Ct_ref_genome.1.bt2",
-		output2 = "resources/Ct_ref_genome.2.bt2",
-		output3 = "resources/Ct_ref_genome.3.bt2",
-		output4 = "resources/Ct_ref_genome.4.bt2",
-		outputrev1= "resources/Ct_ref_genome.rev1.bt2",
-		outputrev2= "resources/Ct_ref_genome.rev2.bt2",
+		output1 = "resources/ctReference.1.bt2",
+		output2 = "resources/ctReference.2.bt2",
+		output3 = "resources/ctReference.3.bt2",
+		output4 = "resources/ctReference.4.bt2",
+		outputrev1= "resources/ctReference.rev1.bt2",
+		outputrev2= "resources/ctReference.rev2.bt2",
+		status = OUTDIR / "status" / "ctReference.status"
 	params:
-		prefix = "resources/Ct_ref_genome"
+		prefix = "resources/ctReference"
 	conda: "envs/bowtie.yaml"
-	log: outdir / "log" / "Ct_ref.index.log"
+	log: OUTDIR / "log" / "ctReference.index.log"
 	shell:"""
 	bowtie2-build {input.reference} {params.prefix} 2> {log}
 	"""
 
 # why is --local specified here? end to end is generally better
-rule align2concat:
+rule bowtie:
 	input:
-		human = outdir / "split" / "{sample}.human.fastq.gz"
+		r1 = rules.scrub.output.r1,
+		r2 = rules.scrub.output.r2,
+		status = rules.index.output.status,
 	output:
-		clean_r1 = outdir / "split" / "{sample}_nonhuman_1.fastq.gz",
-		clean_r2 = outdir / "split" / "{sample}_nonhuman_2.fastq.gz",
-		bam = outdir / "mapping" / "{sample}.bam",
-		unaligned = outdir / "mapping" / "{sample}.unmapped.fastq.gz",
-		coverage = outdir / "converage" / "{sample}.coverage.txt"
-	threads: 4
-	params:
-		prefix = outdir / "Ct_ref_genome"
+		bam = OUTDIR / "{sample}" / "aligned" / "{sample}.bam",
+		unaligned = OUTDIR / "{sample}" / "aligned" / "{sample}.aligned.sam",
+		status = OUTDIR / "status" / "aligned.{sample}.txt",
+		coverage = OUTDIR / "{sample}" / "coverage.{sample}.txt"
+	threads: 12
 	conda: "envs/bowtie.yaml"
-	log: outdir / "log" / "{sample}.align2concat.log"
+	log: OUTDIR / "log" / "bowtie2.{sample}.log"
 	shell:"""
 	bowtie2 -x \
 	{params.prefix} \
-	-1 {params.clean_r1} \
-	-2 {params.clean_r2}\
+	-1 {input.r1} \
+	-2 {input.r2}\
 	-U {output.unaligned} \
-	--local \
 	--threads {threads} | \
 	samtools view -bSh - | \
 	samtools sort -@{threads} \
-	-o {output.bam} \
-	2> {log}
+	-o {output.bam} 2> {log}
 
 	samtools index {output.bam}
 	samtools coverage {output.bam} > {output.converage}
+
+	touch {output.status}
 	"""
 
 
+# rule blast_ompa:
+# 	input:
+# 		pass
+# 	output:
+# 		pass
+# 	params:
+# 		pass
+# 	threads: 5
+# 	log: OUTDIR / "log" / "blastompa.{sample}.log"
+# 	shell:"""
+# 	blastn
+# 	"""
 
+# rule collate_coverage
+
+# rule collage_blast
 

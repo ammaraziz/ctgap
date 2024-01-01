@@ -1,0 +1,6 @@
+name: scrub
+channels:
+  - bioconda
+dependencies:
+  - kraken2
+  - minimap2
