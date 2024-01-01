@@ -1,11 +1,11 @@
-# skip - sola klamydia illumina pipeline
+# CtGAP - Chlamydia trachomatis Genome Assembly Pipeline
 
 ### Install
 
 1. `git clone` this repo:
 
 ```
-git clone https://github.com/ammaraziz/skip
+git clone https://github.com/ammaraziz/ctgap
 ```
 
 2. Install `miniconda` or preferrably `mamba`
@@ -23,8 +23,8 @@ mamba install -c bioconda snakemake
 
 ### Usage
 
-1. Create a folder `skip/input/`
-2. Add your fastq.gz files in `skip/input/`. 
+1. Create a folder `ctgap/input/`
+2. Add your fastq.gz files in `ctgap/input/`. 
 
 	- Ensure they're named as follows: `{sample_name}_{direction}.fastq.gz`. 
         - eg `SRR12345_R1.fastq.gz` and `SRR12345_R2.fastq.gz`.
