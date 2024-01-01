@@ -26,7 +26,7 @@ cargo install scrubby
 4. Download the human genome, rename to `resources/grch38.fasta`
 	- [From NCBI](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.40/)
 
-5. Download one of the kraken dbs with bacterial genomes:
+5. Download one of the kraken dbs with bacterial genomes, rename to `resources/standardDB`:
 	- https://benlangmead.github.io/aws-indexes/k2
 
 6. Done - The pipeline will handle the dependencies internally.
