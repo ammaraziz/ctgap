@@ -48,9 +48,22 @@ snakemake -j 8 --use-conda -k
 - `--use-conda` tells snakemake to install the dependencies.
 - `-k` tells snakemake to keep going if a sample fails.
 
+### Dependencies
+
+- Snakemake
+- Spades
+- Shovill
+- Bowtie2
+- Samtools
+- fastp
+- bbmap (bbnorm)
+- kraken2
+- multiqc
+- blast+
+
 ### Output
 
-
+TBA
 
 ### Cite
 
