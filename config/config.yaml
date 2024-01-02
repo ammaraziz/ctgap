@@ -5,14 +5,17 @@ adapters: resources/adapters.fasta
 ctReference: resources/ctReferences.fasta
 homoReference: resources/grch38.fasta.gz
 krakenDB: resources/standardDB
+ompaBlastDB: resources/ompaBlastDB/ompa
 use_conda: true
 
+# numbe of cpus used per tool/rule
 threads:
   fastp: 10
   scurbby: 10
-  bowtie: 10
   shovill: 10
   spades: 10
-  samtools: 5
   bbnorm: 10
-  
+  bowtieindex: 10
+  # bowtie is piped into samtools
+  bowtie: 5
+  samtools: 5

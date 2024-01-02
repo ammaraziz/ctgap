@@ -2,12 +2,13 @@ from pathlib import Path
 import sys
 configfile: "config/config.yaml"
 
-INDIR = Path("/Users/aaziz/Downloads/ctgap_input")
+INDIR = Path("path/to/input/")
 OUTDIR = Path(config["outdir"])
 KRAKENDB = config["krakenDB"]
 HUMANREF = config["homoReference"]
 CTREF = config["ctReference"]
 ADAPTERS = config["adapters"]
+OMPABLASTDB = config["ompaBlastDB"]
 
 SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
 SAMPLES = set(SAMPLE_NAME)
@@ -17,12 +18,23 @@ if not SAMPLES:
 
 rule all:
 	input:
+		# trim and qc
 		expand(OUTDIR / "status" / "trim.{sample}.txt", sample = SAMPLES),
 		expand(OUTDIR / "status" / "scrub.{sample}.txt", sample = SAMPLES),
 		expand(OUTDIR / "status" / "trim.scrub.{sample}.txt", sample = SAMPLES),
-		#expand(OUTDIR / "status" / "normalise.{sample}.txt", sample = SAMPLES),
+
+		# denovo
+		expand(OUTDIR / "status" / "normalise.{sample}.txt", sample = SAMPLES),
 		expand(OUTDIR / "status" / "shovill.{sample}.txt", sample = SAMPLES),
-		# expand(OUTDIR / "status" / "spades.{sample}.txt", sample = SAMPLES),
+		#expand(OUTDIR / "status" / "spades.{sample}.txt", sample = SAMPLES),
+		expand(OUTDIR / "status" / "blastn.{sample}.txt", sample = SAMPLES),
+		
+		# alignment 
+		expand(OUTDIR / "status" / "aligned.{sample}.txt", sample = SAMPLES),
+		
+		# collation
+		# OUTDIR / "status" / "collate.blast.txt"
+		# OUTDIR / "status" / "collage.coverage.txt"
 		# OUTDIR / "qc" / "multiqc_report.html",
 
 rule fastp:
@@ -44,7 +56,7 @@ rule fastp:
 		right_mean_quality=15,
 	threads: 12
 	conda: "envs/trim.yaml"
-	log: OUTDIR / "log" / "trim.{sample}.log"
+	log: OUTDIR / "{sample}" / "log" / "trim.{sample}.log"
 	shell:"""
 	fastp \
 	-i {input.r1} \
@@ -83,7 +95,7 @@ rule scrub:
 		workdir =  OUTDIR / "{sample}" / "scrub" / "workdir"
 	threads: 20
 	conda: "envs/scrub.yaml"
-	log: OUTDIR / "log" / "{sample}.scrub.log"
+	log: OUTDIR / "{sample}" / "log" / "scrub.{sample}.log"
 	shell:"""
 	scrubby scrub-reads \
 	-i {input.r1} {input.r2} \
@@ -108,7 +120,7 @@ rule fastp_qc:
 		status = OUTDIR / "status" / "trim.scrub.{sample}.txt",
 	threads: 12
 	conda: "envs/trim.yaml"
-	log: OUTDIR / "log" / "trim.scrub.{sample}.log"
+	log: OUTDIR / "{sample}" / "log" / "trim.scrub.{sample}.log"
 	shell:"""
 	fastp \
 	-i {input.r1} \
@@ -132,7 +144,7 @@ rule normalise:
 		target = 100,
 		minimum = 5,
 	conda: "envs/normalise.yaml"
-	log: OUTDIR / "log" / "normalise.{sample}.log"
+	log: OUTDIR / "{sample}" / "log" / "normalise.{sample}.log"
 	threads: 10
 	shell:"""
 	bbnorm.sh \
@@ -155,10 +167,11 @@ rule shovill:
 		status = OUTDIR / "status" / "shovill.{sample}.txt",
 		outdir = directory(OUTDIR / "{sample}" / "shovill"),
 	params:
+		contig = OUTDIR / "{sample}" / "shovill" / "contigs.fa",
 		gsize = "1.04M",
 		depth = 200,
 	conda: "envs/shovill.yaml"
-	log: OUTDIR / "log" / "shovill.{sample}.log"
+	log: OUTDIR / "{sample}" / "log" / "shovill.{sample}.log"
 	threads: 8
 	shell:"""
 	shovill \
@@ -178,11 +191,11 @@ rule spades:
 		r1 = rules.scrub.output.r1,
 		r2 = rules.scrub.output.r2,
 	output:
+		status = OUTDIR / "status" / "spades.{sample}.txt",
 		assembly = directory(OUTDIR / "{sample}" / "spades"),
-		status = OUTDIR / "status" / "spades.{sample}.txt"
 	threads: 12
 	conda: "envs/shovill.yaml"
-	log: OUTDIR / "log" / "spades.{sample}.logs"
+	log: OUTDIR / "{sample}" / "log" / "spades.{sample}.logs"
 	shell:"""
 	spades.py \
 	--careful \
@@ -210,19 +223,16 @@ rule index:
 	input:
 		reference = CTREF
 	output:
-		output1 = "resources/ctReference.1.bt2",
-		output2 = "resources/ctReference.2.bt2",
-		output3 = "resources/ctReference.3.bt2",
-		output4 = "resources/ctReference.4.bt2",
-		outputrev1= "resources/ctReference.rev1.bt2",
-		outputrev2= "resources/ctReference.rev2.bt2",
 		status = OUTDIR / "status" / "ctReference.status"
 	params:
 		prefix = "resources/ctReference"
-	conda: "envs/bowtie.yaml"
+	threads: 10
 	log: OUTDIR / "log" / "ctReference.index.log"
+	conda: "envs/bowtie.yaml"
 	shell:"""
-	bowtie2-build {input.reference} {params.prefix} 2> {log}
+	bowtie2-build --threads {threads} {input.reference} {params.prefix} &> {log}
+
+	touch {output.status}
 	"""
 
 # why is --local specified here? end to end is generally better
@@ -233,44 +243,83 @@ rule bowtie:
 		status = rules.index.output.status,
 	output:
 		bam = OUTDIR / "{sample}" / "aligned" / "{sample}.bam",
-		unaligned = OUTDIR / "{sample}" / "aligned" / "{sample}.aligned.sam",
+		coverage = OUTDIR / "{sample}" / "coverage.{sample}.tsv",
 		status = OUTDIR / "status" / "aligned.{sample}.txt",
-		coverage = OUTDIR / "{sample}" / "coverage.{sample}.txt"
+	params:
+		prefix = rules.index.params.prefix
 	threads: 12
+	log: OUTDIR / "{sample}" / "log" / "bowtie2.{sample}.log"
 	conda: "envs/bowtie.yaml"
-	log: OUTDIR / "log" / "bowtie2.{sample}.log"
 	shell:"""
 	bowtie2 -x \
 	{params.prefix} \
 	-1 {input.r1} \
 	-2 {input.r2}\
-	-U {output.unaligned} \
 	--threads {threads} | \
 	samtools view -bSh - | \
 	samtools sort -@{threads} \
-	-o {output.bam} 2> {log}
+	-o {output.bam} & > {log}
 
 	samtools index {output.bam}
-	samtools coverage {output.bam} > {output.converage}
+	samtools coverage {output.bam} > {output.coverage}
 
 	touch {output.status}
 	"""
 
+rule blast_ompa:
+	input:
+		rules.shovill.params.contig
+	output:
+		tab = OUTDIR / "{sample}" / "blast" / "blast.ompa.tab",
+		status = OUTDIR / "status" / "blastn.{sample}.txt"
+	log: OUTDIR / "{sample}" / "log" / "blastompa.{sample}.log"
+	params:
+		outfmt = 6,
+		db = OMPABLASTDB,
+		targets = 1
+	threads: 5
+	conda: "envs/misc.yaml"
+	shell:"""
+	blastn \
+	-query {input.tab} \
+	-db {params.db} \
+	-max_target_seqs {params.targets} \
+	-html  \
+	-outfmt {params.outfmt} \
+	-out {output}
 
-# rule blast_ompa:
-# 	input:
-# 		pass
-# 	output:
-# 		pass
-# 	params:
-# 		pass
-# 	threads: 5
-# 	log: OUTDIR / "log" / "blastompa.{sample}.log"
-# 	shell:"""
-# 	blastn
-# 	"""
+	touch {output.status}
+	"""
 
-# rule collate_coverage
+rule collate_coverage:
+	input:
+		status = expand(OUTDIR / "status" / "aligned.{sample}.txt", sample = SAMPLES),
+		coverages = expand(OUTDIR / "{sample}" / "coverage.{sample}.tsv", sample = SAMPLES),
+	output:
+		coverages = OUTDIR / "all.coverage.tsv",
+		status = OUTDIR / "status" / "collage.coverage.txt",
+	threads: 1
+	conda: "envs/misc.yaml"
+	shell:"""
+	csvtk concat {input.coverages} >  {output.coverages}
 
-# rule collage_blast
+	touch {output.status}
+	"""
+	
+rule collage_blast:
+	input:
+		status_shovill = expand(OUTDIR / "status" / "shovill.{sample}.txt", sample = SAMPLES),
+	output:
+		tsv = OUTDIR / "all.blast.tsv",
+		status = OUTDIR / "status" / "collate.blast.txt",
+	params:
+		outdir = OUTDIR,
+		pattern = "**/blast/*.tab",
+	threads: 1
+	shell:"""
+	grep {params.pattern:q} {params.outdir} > {output.tsv}
+
+	touch {output.status}
+	"""
+
 
