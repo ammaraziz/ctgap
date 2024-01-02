@@ -166,8 +166,8 @@ rule shovill:
 	output:
 		status = OUTDIR / "status" / "shovill.{sample}.txt",
 		outdir = directory(OUTDIR / "{sample}" / "shovill"),
-	params:
 		contig = OUTDIR / "{sample}" / "shovill" / "contigs.fa",
+	params:
 		gsize = "1.04M",
 		depth = 200,
 	conda: "envs/shovill.yaml"
@@ -268,13 +268,12 @@ rule bowtie:
 
 rule blast_ompa:
 	input:
-		rules.shovill.output.status
+		contig = rules.shovill.output.contig,
 	output:
 		tab = OUTDIR / "{sample}" / "blast" / "blast.ompa.tab",
 		status = OUTDIR / "status" / "blastn.{sample}.txt"
 	log: OUTDIR / "{sample}" / "log" / "blastompa.{sample}.log"
 	params:
-		contig = rules.shovill.params.contig,
 		outfmt = 6,
 		db = OMPABLASTDB,
 		targets = 1
