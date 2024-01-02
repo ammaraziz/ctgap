@@ -286,6 +286,7 @@ rule blast_ompa:
 	-max_target_seqs {params.targets} \
 	-html  \
 	-outfmt {params.outfmt} \
+	-parse_seqids \
 	-out {output.tab}
 
 	touch {output.status}
