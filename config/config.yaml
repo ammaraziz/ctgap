@@ -5,7 +5,7 @@ adapters: resources/adapters.fasta
 ctReference: resources/ctReferences.fasta
 homoReference: resources/grch38.fasta.gz
 krakenDB: resources/standardDB
-ompaBlastDB: resources/ompaBlastDB/ompa
+ompaBlastDB: resources/ompaBlastDB/ompa20
 use_conda: true
 
 # numbe of cpus used per tool/rule
