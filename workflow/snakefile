@@ -282,7 +282,7 @@ rule blast_ompa:
 	conda: "envs/misc.yaml"
 	shell:"""
 	blastn \
-	-query {input.tab} \
+	-query {params.contig} \
 	-db {params.db} \
 	-max_target_seqs {params.targets} \
 	-html  \
