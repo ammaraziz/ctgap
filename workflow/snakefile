@@ -258,7 +258,7 @@ rule bowtie:
 	--threads {threads} | \
 	samtools view -bSh - | \
 	samtools sort -@{threads} \
-	-o {output.bam} & > {log}
+	-o {output.bam} &> {log}
 
 	samtools index {output.bam}
 	samtools coverage {output.bam} > {output.coverage}
