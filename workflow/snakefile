@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 configfile: "config/config.yaml"
 
-INDIR = Path("path/to/input/")
+INDIR = Path("/Users/aaziz/Downloads/ctgap_input/")
 OUTDIR = Path(config["outdir"])
 KRAKENDB = config["krakenDB"]
 HUMANREF = config["homoReference"]
@@ -24,7 +24,7 @@ rule all:
 		expand(OUTDIR / "status" / "trim.scrub.{sample}.txt", sample = SAMPLES),
 
 		# denovo
-		expand(OUTDIR / "status" / "normalise.{sample}.txt", sample = SAMPLES),
+		#expand(OUTDIR / "status" / "normalise.{sample}.txt", sample = SAMPLES),
 		expand(OUTDIR / "status" / "shovill.{sample}.txt", sample = SAMPLES),
 		#expand(OUTDIR / "status" / "spades.{sample}.txt", sample = SAMPLES),
 		expand(OUTDIR / "status" / "blastn.{sample}.txt", sample = SAMPLES),
@@ -268,12 +268,13 @@ rule bowtie:
 
 rule blast_ompa:
 	input:
-		rules.shovill.params.contig
+		rules.shovill.output.status
 	output:
 		tab = OUTDIR / "{sample}" / "blast" / "blast.ompa.tab",
 		status = OUTDIR / "status" / "blastn.{sample}.txt"
 	log: OUTDIR / "{sample}" / "log" / "blastompa.{sample}.log"
 	params:
+		contig = rules.shovill.params.contig,
 		outfmt = 6,
 		db = OMPABLASTDB,
 		targets = 1
