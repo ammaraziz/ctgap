@@ -1,7 +1,8 @@
-name: skip_misc
+name: ctgap_misc
 channels:
   - bioconda
 dependencies:
   - multiqc
   - csvtk
   - blast
+  - seqkit

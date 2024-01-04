@@ -1,0 +1,7 @@
+name: ctgap_scaffold
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - rag-tag
+  - fastani

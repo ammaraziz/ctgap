@@ -1,21 +1,25 @@
+indir: /Users/aaziz/Downloads/ctgap_input/
 outdir: /Users/aaziz/Downloads/ctgap_output
 
 samples: config/samples.tsv
 adapters: resources/adapters.fasta
-ctReference: resources/ctReferences.fasta
+ctReference: resources/ctReferences/ctReferences.fasta
+scaffoldReference: resources/scaffoldReference.fasta
 homoReference: resources/grch38.fasta.gz
 krakenDB: resources/standardDB
 ompaBlastDB: resources/ompaBlastDB/ompa20
+
 use_conda: true
 
 # numbe of cpus used per tool/rule
 threads:
   fastp: 10
-  scurbby: 10
-  shovill: 10
-  spades: 10
-  bbnorm: 10
-  bowtieindex: 10
+  scrubby: 12
+  shovill: 12
+  spades: 12
+  bowtieindex: 5
+  blast: 5
+  ragtag: 10
   # bowtie is piped into samtools
-  bowtie: 5
-  samtools: 5
+  bowtie: 10
+  samtools: 10

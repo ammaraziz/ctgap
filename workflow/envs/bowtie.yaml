@@ -1,4 +1,4 @@
-name: skip_bowtie
+name: ctgap_bowtie
 channels:
   - bioconda
 dependencies:

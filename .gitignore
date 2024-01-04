@@ -5,3 +5,4 @@ resources/*.rev.*.bt2
 input/*.fastq.gz
 resources/grch38.fasta.gz
 resources/standardDB/*
+dag.pdf
