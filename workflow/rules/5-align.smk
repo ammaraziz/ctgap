@@ -4,7 +4,7 @@ rule index:
 	output:
 		status = OUTDIR / "status" / "ctReferences" / "ctReference.status"
 	params:
-		prefix = "resources/ctReference"
+		prefix = "resources/ctReferences"
 	threads: config["threads"]["bowtieindex"]
 	log: OUTDIR / "log" / "ctReference.index.log"
 	conda: "../envs/bowtie.yaml"
