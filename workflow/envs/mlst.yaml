@@ -1,0 +1,6 @@
+name: ctgap_mlst
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - pymlst
