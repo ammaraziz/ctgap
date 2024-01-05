@@ -1,4 +1,4 @@
-name: skip_spades
+name: ctgap_shovill
 channels:
   - bioconda
 dependencies:

@@ -1,4 +1,4 @@
-name: scrub
+name: ctgap_scrub
 channels:
   - bioconda
 dependencies:
