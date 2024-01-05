@@ -21,7 +21,7 @@ rule scrub:
 	shell:"""
 	scrubby scrub-reads \
 	-i {input.r1} {input.r2} \
-	-o {output.r1tmp} {output.r2tmp} \
+	-o {params.r1tmp} {params.r2tmp} \
 	--kraken-db {params.db} \
 	--kraken-taxa "Archaea Eukaryota Holozoa Nucletmycea" \
 	--min-len {params.minlen} \
