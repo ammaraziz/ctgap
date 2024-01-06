@@ -1,10 +1,11 @@
-rule mlst_genome:
+rule mlst:
     input:
         rules.shovill.output.contig
     output:
         generic = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
         ct = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
         plasmid =  OUTDIR / "{sample}" / "mlst" / "{sample}.genome.plasmid.mlst.txt",
+        status = OUTDIR / "status" / "mlst.{sample}.txt",
     log: OUTDIR / "{sample}" / "log" / "mlst.{sample}.log"
     benchmark: OUTDIR / "{sample}" / "benchmark" / "mlst.{sample}.txt"
     params:
@@ -27,4 +28,6 @@ rule mlst_genome:
     claMLST search \
     {params.plasmid} \ 
     {input} > {output.plasmid} 2>> {log}
+
+    touch {output.status}
     """
