@@ -1,6 +1,6 @@
 rule mlst:
     input:
-        rules.shovill.output.contig
+        rules.scaffold.output.scaffold
     output:
         generic = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
         ct = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",

@@ -26,7 +26,7 @@ rule shovill:
 	touch {output.status}
 	"""
 
-# are the reads here interleaved? bbsplit outputs r1 and r2.
+# spades rule currently not used
 rule spades:
 	input:
 		r1 = rules.scrub.output.r1,

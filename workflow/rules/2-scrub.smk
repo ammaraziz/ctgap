@@ -32,7 +32,7 @@ rule scrub:
 	echo -e "\nScrubby Kraken Extract \n" >> {log}
 
 	scrubby scrub-kraken \
-	-i {output.r1tmp} {output.r2tmp} \
+	-i {params.r1tmp} {params.r2tmp} \
 	-o {output.r1} {output.r2} \
 	--extract \
 	--kraken-taxa {params.kraken_taxa_extract} \

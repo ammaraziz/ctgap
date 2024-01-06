@@ -1,6 +1,6 @@
 rule blast_ompa:
 	input:
-		contig = rules.shovill.output.contig,
+		contig = rules.scaffold.output.scaffold,
 	output:
 		tab = OUTDIR / "{sample}" / "blast" / "blast.ompa.tab",
 		status = OUTDIR / "status" / "blastn.{sample}.txt"
