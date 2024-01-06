@@ -11,7 +11,7 @@ CTREF = config["ctReference"]
 ADAPTERS = config["adapters"]
 OMPABLASTDB = config["ompaBlastDB"]
 SCAFFOLDREF = config["scaffoldReference"]
-MLSTDBLOC = Path(config["mlstDBloc"])
+MLSTDBLOC = Path(config["mlstDBLoc"])
 
 # get samples
 SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
