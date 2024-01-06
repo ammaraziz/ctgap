@@ -27,6 +27,7 @@ rule scrub:
 	--min-len {params.minlen} \
 	--minimap2-index {params.human} \
 	--kraken-threads {threads} \
+	--keep \
 	--workdir {params.workdir:q} 2> {log}	
 
 	echo -e "\nScrubby Kraken Extract \n" >> {log}
@@ -37,8 +38,7 @@ rule scrub:
 	--extract \
 	--kraken-taxa {params.kraken_taxa_extract} \
 	--kraken-reads {params.workdir}/0-standardDB.kraken \
-	--kraken-report {params.workdir}/0-standardDB.report \
-	--kraken-threads {threads} 2>> {log}	
+	--kraken-report {params.workdir}/0-standardDB.report 2>> {log}	
 
 	touch {output.status}
 	"""
