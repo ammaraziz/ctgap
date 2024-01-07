@@ -8,7 +8,7 @@ scaffoldReference: resources/scaffoldReference.fasta
 homoReference: resources/grch38.fasta.gz
 krakenDB: resources/standardDB
 ompaBlastDB: resources/ompaBlastDB/ompa20
-mlstDBLoc: resources/mlst/
+mlstDBLoc: resources/pubmlst/
 use_conda: true
 
 # numbe of cpus used per tool/rule
