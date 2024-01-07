@@ -11,7 +11,7 @@ rule scrub:
 		human = HUMANREF,
 		minlen = 50,
 		kraken_taxa_extract = 51291, #Chlamydiales
-		workdir = OUTDIR / "{sample}" / "scrub" / "scrubby_temp",
+		workdir = directory(OUTDIR / "{sample}" / "scrub" / "scrubby_temp"),
 		r1tmp = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub_first_R1.fastq.gz",
 		r2tmp = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub_first_R2.fastq.gz",
 	threads: config["threads"]["scrubby"]
