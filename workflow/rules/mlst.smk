@@ -8,6 +8,7 @@ rule mlst:
         status = OUTDIR / "status" / "mlst.{sample}.txt",
     log: OUTDIR / "{sample}" / "log" / "mlst.{sample}.log"
     benchmark: OUTDIR / "{sample}" / "benchmark" / "mlst.{sample}.txt"
+    conda: "../envs/mlst.yaml"
     params:
         dbgeneric = MLSTDBLOC / "chlamydiales",
         dbct = MLSTDBLOC / "c.trachomatis",
