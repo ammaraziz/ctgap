@@ -3,7 +3,7 @@ outdir: /Users/aaziz/Downloads/ctgap_output
 
 samples: config/samples.tsv
 adapters: resources/adapters.fasta
-ctReference: resources/ctReferences/ctReferences.fasta
+ctReference: resources/ctReferences/all.fasta
 scaffoldReference: resources/scaffoldReference.fasta
 homoReference: resources/grch38.fasta.gz
 krakenDB: resources/standardDB

@@ -1,10 +1,11 @@
 rule index:
+	message: "Indexing Ct references"
 	input:
 		reference = CTREF
 	output:
 		status = OUTDIR / "status" / "ctReferences" / "ctReference.status"
 	params:
-		prefix = "resources/ctReferences"
+		prefix = "resources/ctReferences/all"
 	threads: config["threads"]["bowtieindex"]
 	log: OUTDIR / "log" / "ctReference.index.log"
 	conda: "../envs/bowtie.yaml"

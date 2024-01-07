@@ -5,6 +5,8 @@ rule scrub:
 	output:
 		r1 = OUTDIR / "{sample}" / "scrub" / "{sample}_trim_scrub_R1.fastq.gz",
 		r2 = OUTDIR / "{sample}" / "scrub" / "{sample}_trim_scrub_R2.fastq.gz",
+		r1tmp = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub_first_R1.fastq.gz",
+		r2tmp = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub_first_R2.fastq.gz",
 		status = OUTDIR / "status" / "scrub.{sample}.txt"
 	params:
 		db = KRAKENDB,
@@ -12,8 +14,6 @@ rule scrub:
 		minlen = 50,
 		kraken_taxa_extract = 51291, #Chlamydiales
 		workdir = directory(OUTDIR / "{sample}" / "scrub" / "scrubby_temp"),
-		r1tmp = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub_first_R1.fastq.gz",
-		r2tmp = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub_first_R2.fastq.gz",
 	threads: config["threads"]["scrubby"]
 	conda: "../envs/scrub.yaml"
 	log: OUTDIR / "{sample}" / "log" / "scrub.{sample}.log"
@@ -21,7 +21,7 @@ rule scrub:
 	shell:"""
 	scrubby scrub-reads \
 	-i {input.r1} {input.r2} \
-	-o {params.r1tmp} {params.r2tmp} \
+	-o {output.r1tmp} {output.r2tmp} \
 	--kraken-db {params.db} \
 	--kraken-taxa "Archaea Eukaryota Holozoa Nucletmycea" \
 	--min-len {params.minlen} \
@@ -33,7 +33,7 @@ rule scrub:
 	echo -e "\nScrubby Kraken Extract \n" >> {log}
 
 	scrubby scrub-kraken \
-	-i {params.r1tmp} {params.r2tmp} \
+	-i {output.r1tmp} {output.r2tmp} \
 	-o {output.r1} {output.r2} \
 	--extract \
 	--kraken-taxa {params.kraken_taxa_extract} \

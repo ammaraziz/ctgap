@@ -1,7 +1,7 @@
 .DS_Store
 .snakemake/*
 resources/GRCh38.fasta
-resources/*.rev.*.bt2
+resources/ctReferences/*.bt2
 input/*.fastq.gz
 resources/grch38.fasta.gz
 resources/standardDB/*
