@@ -13,7 +13,7 @@ rule collate_coverage:
 	touch {output.status}
 	"""
 	
-rule collage_blast:
+rule collate_blast:
 	input:
 		status_shovill = expand(OUTDIR / "status" / "shovill.{sample}.txt", sample = SAMPLES),
 	output:

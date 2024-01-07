@@ -3,7 +3,7 @@ rule scaffold:
 		contigs = rules.shovill.output.contig
 	output:
 		outdir = directory(OUTDIR / "{sample}" / "scaffold"),
-		scaffold = OUTDIR / "{sample}" / "scaffold" / "scaffolded.fasta",
+		scaffold = OUTDIR / "{sample}" / "scaffold" / "ragtag.scaffold.fasta",
 		status = OUTDIR / "status" / "scaffold.{sample}.txt",
 	params:
 		ref = SCAFFOLDREF,

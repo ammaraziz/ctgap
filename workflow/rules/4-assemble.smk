@@ -1,4 +1,5 @@
 rule shovill:
+	message: "Assembling Sample {wildcards.sample}"
 	input:
 		r1 = rules.scrub.output.r1,
 		r2 = rules.scrub.output.r2,
