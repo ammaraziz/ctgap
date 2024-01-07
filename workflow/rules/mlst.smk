@@ -11,7 +11,7 @@ rule mlst:
     params:
         dbgeneric = MLSTDBLOC / "chlamydiales",
         dbct = MLSTDBLOC / "c.trachomatis",
-        plasmid = MLSTDBLOC / "plasmid",
+        dbplasmid = MLSTDBLOC / "plasmid",
     threads: config["threads"]["mlst"]
     shell:"""
     echo -e "chlamydiales\n"
@@ -21,12 +21,12 @@ rule mlst:
 
     echo -e "\nctrachomatis\n"
     claMLST search \
-    {params.ct} \ 
+    {params.dbct} \ 
     {input} > {output.ct} 2>> {log}
 
     echo -e "\nplasmid\n"
     claMLST search \
-    {params.plasmid} \ 
+    {params.dbplasmid} \ 
     {input} > {output.plasmid} 2>> {log}
 
     touch {output.status}

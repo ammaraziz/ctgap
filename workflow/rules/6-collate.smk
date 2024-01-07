@@ -24,10 +24,8 @@ rule collate_blast:
 		pattern = "**/blast/*.tab",
 	threads: 1
 	shell:"""
-	echo "query\tsubject\tpident\tlength\tmismatch\tgapopen\tquery_start\tquery_end\tsubject_start\tsubject_end\tevalue\tbitscore" > {output.tsv}
+	echo -e "query\tsubject\tpident\tlength\tmismatch\tgapopen\tquery_start\tquery_end\tsubject_start\tsubject_end\tevalue\tbitscore" > {output.tsv}
 	grep "" {params.outdir}/{params.pattern} >> {output.tsv}
 
 	touch {output.status}
 	"""
-
-
