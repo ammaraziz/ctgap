@@ -39,7 +39,7 @@ cargo install scrubby
 	- Ensure they're named as follows: `{sample_name}_{direction}.fastq.gz`. 
         - eg `SRR12345_R1.fastq.gz` and `SRR12345_R2.fastq.gz`.
 
-3. In `skip/` folder run the pipeline:
+3. In `ctgap/` folder run the pipeline:
 ```
 snakemake -j 8 --use-conda -k
 ```
