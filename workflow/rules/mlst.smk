@@ -15,17 +15,17 @@ rule mlst:
         dbplasmid = MLSTDBLOC / "plasmid",
     threads: config["threads"]["mlst"]
     shell:"""
-    echo -e "chlamydiales\n"
+    echo -e "chlamydiales\n" >> {log}
     claMLST search \
-    {params.dbgeneric} \ 
-    {input} > {output.generic} 2> {log}
+    {params.dbgeneric} \
+    {input} > {output.generic} 2>> {log}
 
-    echo -e "\nctrachomatis\n"
+    echo -e "\nctrachomatis\n" >> {log}
     claMLST search \
-    {params.dbct} \ 
+    {params.dbct} \
     {input} > {output.ct} 2>> {log}
 
-    echo -e "\nplasmid\n"
+    echo -e "\nplasmid\n" >> {log}
     claMLST search \
     {params.dbplasmid} \ 
     {input} > {output.plasmid} 2>> {log}
