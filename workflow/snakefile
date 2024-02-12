@@ -12,13 +12,19 @@ ADAPTERS = config["adapters"]
 OMPABLASTDB = config["ompaBlastDB"]
 SCAFFOLDREF = config["scaffoldReference"]
 MLSTDBLOC = Path(config["mlstDBLoc"])
+SAMPLESHEET = config['sample_sheet']
+MODE = config['mode'] 
 
 # get samples
-SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
-SAMPLES = set(SAMPLE_NAME)
+# SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
+# SAMPLES = set(SAMPLE_NAME)
+dictReads = parseSamples(SAMPLESHEET)
+SAMPLES = list(dictReads.keys())
 if not SAMPLES:
 	print("No input samples were detected. Check the files are named properly: {sample_name}_{pair}")
 	sys.exit()
+sys.exit()
+
 
 rule all:
 	input:
@@ -43,16 +49,25 @@ rule all:
 		OUTDIR / "status" / "collage.coverage.txt",
 		# OUTDIR / "qc" / "multiqc_report.html",
 
-
-
-
 # modules
+
+# common modules
 include: "rules/1-trim.smk"
 include: "rules/2-scrub.smk"
 include: "rules/3-qc.smk"
-include: "rules/4-assemble.smk"
-include: "rules/scaffold.smk"
-include: "rules/5-align.smk"
+
+# modes module
+if config['mode'] == 'denovo':
+	include: "rules/4-assemble.smk"
+	include: "rules/scaffold.smk"
+elif config['mode'] == 'ref-denovo'
+	include: "rules/5-align.smk"
+elif config['mode'] == 'both':
+	include: "rules/4-assemble.smk"
+	include: "rules/scaffold.smk"
+	include: "rules/5-align.smk"
+
+# analysis module
 include: "rules/6-collate.smk"
 include: "rules/blast.smk"
 include: "rules/mlst.smk"
