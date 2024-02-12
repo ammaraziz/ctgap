@@ -1,7 +1,7 @@
-indir: /Users/aaziz/Downloads/ctgap_input/
-outdir: /Users/aaziz/Downloads/ctgap_output
+# indir: /path/to/input/folder
+sample_sheet: config/samples.csv
+outdir: /path/to/output/dir/
 
-samples: config/samples.tsv
 adapters: resources/adapters.fasta
 ctReference: resources/ctReferences/all.fasta
 scaffoldReference: resources/scaffoldReference.fasta
@@ -9,7 +9,12 @@ homoReference: resources/grch38.fasta.gz
 krakenDB: resources/standardDB
 ompaBlastDB: resources/ompaBlastDB/ompa20
 mlstDBLoc: resources/pubmlst/
+mode: denovo # [denovo, reference-denovo, both]
+reference: plurality # [plurality, reference_20, reference_name]
+
+# ensure conda is used without user having to specify
 use_conda: true
+
 
 # numbe of cpus used per tool/rule
 threads:
