@@ -7,7 +7,6 @@ INDIR = Path(config["indir"])
 OUTDIR = Path(config["outdir"])
 KRAKENDB = config["krakenDB"]
 HUMANREF = config["homoReference"]
-CTREF = config["ctReference"]
 ADAPTERS = config["adapters"]
 OMPABLASTDB = config["ompaBlastDB"]
 SCAFFOLDREF = config["scaffoldReference"]
@@ -15,6 +14,13 @@ MLSTDBLOC = Path(config["mlstDBLoc"])
 SAMPLESHEET = config['sample_sheet']
 MODE = config['mode'] 
 
+
+if config["ctReference"] == "plurality":
+	CTREF = "resources/ctReferences/ct_plurality.fasta"
+if config["ctReference"] == "reference_24":
+	CTREF = "resources/ctReferences/ct_reference_24.fasta"
+else:
+	CTREF = Path("resources/ctReferences/")
 # get samples
 # SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
 # SAMPLES = set(SAMPLE_NAME)

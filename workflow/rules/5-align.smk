@@ -15,7 +15,6 @@ rule index:
 	touch {output.status}
 	"""
 
-# why is --local specified here? end to end is generally better
 rule bowtie:
 	input:
 		r1 = rules.scrub.output.r1,
@@ -45,3 +44,31 @@ rule bowtie:
 
 	touch {output.status}
 	"""
+
+rule bamtofastq:
+	input:
+		bam = rules.bowtie.output.bam,
+	output:
+		r1 = OUTDIR / "{sample}" / "aligned" / "{sample}_refg_r1.fastq.gz",
+		r2 = OUTDIR / "{sample}" / "aligned" / "{sample}_refg_r2.fastq.gz",
+		status = OUTDIR / "status" / "aligned.{sample}.txt",
+	threads: config["threads"]["bedtools"]
+	log: OUTDIR / "{sample}" / "log" / "bowtie2.{sample}.log"
+	conda: "../envs/bowtie.yaml"
+	shell:"""
+	bamToFastq \
+	-i {input.bam} \
+	-fq {output.r1} \
+	-fq2 {output.r2}
+
+	touch {output.status}
+	"""
+
+use rule shovill as mapping_shovill with:
+	input:
+		r1 = rules.bamtofastq.output.r1,
+		r2 = rules.bamtofastq.output.r2,
+	output:
+		status = OUTDIR / "status" / "mapping.shovill.{sample}.txt",
+		outdir = directory(OUTDIR / "{sample}" / "mapping.shovill"),
+		contig = OUTDIR / "{sample}" / "mapping.shovill" / "contigs.fa",
