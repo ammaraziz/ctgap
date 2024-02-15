@@ -39,9 +39,9 @@ rule gapfiller:
 	benchmark: OUTDIR / "{sample}" / "benchmark" / "gap2seq.{sample}.txt"
 	shell:"""
 	EXITCODE=$(Gap2Seq.sh \
-	--scaffolds {input.scaffold} \ 
+	--scaffolds {input.scaffold} \
 	--filled {output.filled} \
-	--reads {input.r1},{input.r2} \ 
+	--reads {input.r1},{input.r2} \
 	--nb-core {threads} 2>&1)
 
 	# gap2seq will fail if filling fails.

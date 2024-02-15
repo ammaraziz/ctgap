@@ -29,7 +29,6 @@ SAMPLES = list(dictReads.keys())
 if not SAMPLES:
 	print("No input samples were detected. Check the files are named properly: {sample_name}_{pair}")
 	sys.exit()
-sys.exit()
 
 
 rule all:
@@ -66,7 +65,7 @@ include: "rules/3-qc.smk"
 if config['mode'] == 'denovo':
 	include: "rules/4-assemble.smk"
 	include: "rules/scaffold.smk"
-elif config['mode'] == 'ref-denovo'
+elif config['mode'] == 'ref-denovo':
 	include: "rules/5-align.smk"
 elif config['mode'] == 'both':
 	include: "rules/4-assemble.smk"

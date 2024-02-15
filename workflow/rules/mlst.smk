@@ -27,7 +27,7 @@ rule mlst:
 
     echo -e "\nplasmid\n" >> {log}
     claMLST search \
-    {params.dbplasmid} \ 
+    {params.dbplasmid} \
     {input} > {output.plasmid} 2>> {log}
 
     touch {output.status}

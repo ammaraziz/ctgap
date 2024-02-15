@@ -1,4 +1,4 @@
-# indir: /path/to/input/folder
+indir: /path/to/input/folder
 sample_sheet: config/samples.csv
 outdir: /path/to/output/dir/
 
