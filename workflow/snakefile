@@ -1,5 +1,7 @@
 import sys
 from pathlib import Path
+from rich import print as pprint
+
 configfile: "config/config.yaml"
 include: "rules/common.smk"
 
@@ -23,39 +25,34 @@ else:
 	CTREF = Path(f"resources/ctReferences/{config['reference']}")
 
 # get samples
-# SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
-# SAMPLES = set(SAMPLE_NAME)
-dictReads = parseSamples(SAMPLESHEET)
-SAMPLES = list(dictReads.keys())
+SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
+SAMPLES = set(SAMPLE_NAME)
+# dictReads = parseSamples(SAMPLESHEET)
+# SAMPLES = list(dictReads.keys())
 if not SAMPLES:
-	print("No input samples were detected. Check the files are named properly: {sample_name}_{pair}")
+	pprint("[yellow]No input samples were detected. Check the files are named properly: {sample_name}_{pair}[/yellow]")
 	sys.exit()
-
 
 rule all:
 	input:
+		expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
+		OUTDIR / "status" / "collate.blast.txt",
 		# trim and qc
-		expand(OUTDIR / "status" / "trim.{sample}.txt", sample = SAMPLES),
-		expand(OUTDIR / "status" / "scrub.{sample}.txt", sample = SAMPLES),
-		expand(OUTDIR / "status" / "trim.scrub.{sample}.txt", sample = SAMPLES),
+		# expand(OUTDIR / "status" / "trim.{sample}.txt", sample = SAMPLES),
+		# expand(OUTDIR / "status" / "scrub.{sample}.txt", sample = SAMPLES),
+		# expand(OUTDIR / "status" / "trim.scrub.{sample}.txt", sample = SAMPLES),
 
-		# denovo
-		expand(OUTDIR / "status" / "shovill.{sample}.txt", sample = SAMPLES),
-		expand(OUTDIR / "status" / "blastn.{sample}.txt", sample = SAMPLES),
-		expand(OUTDIR / "status" / "scaffold.{sample}.txt", sample = SAMPLES),
+		# # denovo
+		# expand(OUTDIR / "status" / "shovill.{sample}.txt", sample = SAMPLES),
+		# expand(OUTDIR / "status" / "blastn.{sample}.txt", sample = SAMPLES),
+		# expand(OUTDIR / "status" / "scaffold.{sample}.txt", sample = SAMPLES),
 		
 		# alignment 
-		expand(OUTDIR / "status" / "aligned.{sample}.txt", sample = SAMPLES),
-
-		# mlst
-		expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
+		#expand(OUTDIR / "status" / "aligned.{sample}.txt", sample = SAMPLES),
 
 		# collation
-		OUTDIR / "status" / "collate.blast.txt",
-		OUTDIR / "status" / "collage.coverage.txt",
-		# OUTDIR / "qc" / "multiqc_report.html",
-
-# modules
+		#OUTDIR / "qc" / "multiqc_report.html",
+		#OUTDIR / "status" / "collage.coverage.txt"
 
 # common modules
 include: "rules/1-trim.smk"
@@ -65,15 +62,13 @@ include: "rules/3-qc.smk"
 # modes module
 if config['mode'] == 'denovo':
 	include: "rules/4-assemble.smk"
-	include: "rules/scaffold.smk"
 elif config['mode'] == 'ref-denovo':
 	include: "rules/5-align.smk"
 elif config['mode'] == 'both':
 	include: "rules/4-assemble.smk"
-	include: "rules/scaffold.smk"
 	include: "rules/5-align.smk"
 
 # analysis module
-include: "rules/6-collate.smk"
 include: "rules/blast.smk"
 include: "rules/mlst.smk"
+include: "rules/6-collate.smk"

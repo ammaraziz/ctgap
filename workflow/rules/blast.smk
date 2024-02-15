@@ -16,7 +16,7 @@ rule blast_ompa:
 	-query {input.contig} \
 	-db {params.db} \
 	-max_target_seqs {params.targets} \
-	-html  \
+	-html \
 	-outfmt {params.outfmt} \
 	-out {output.tab}
 

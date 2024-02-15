@@ -12,10 +12,10 @@ rule collate_coverage:
 
 	touch {output.status}
 	"""
-	
+
 rule collate_blast:
 	input:
-		status_shovill = expand(OUTDIR / "status" / "shovill.{sample}.txt", sample = SAMPLES),
+		status_shovill = expand(OUTDIR / "status" / "blastn.{sample}.txt", sample = SAMPLES),
 	output:
 		tsv = OUTDIR / "all.blast.tsv",
 		status = OUTDIR / "status" / "collate.blast.txt",
