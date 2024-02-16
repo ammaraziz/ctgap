@@ -7,10 +7,9 @@ rule index:
 	params:
 		prefix = f"resources/ctReferences/{CTREF.stem}"
 	threads: config["threads"]["bowtieindex"]
-	log: OUTDIR / "log" / "ctReference.index.log"
 	conda: "../envs/bowtie.yaml"
 	shell:"""
-	bowtie2-build --threads {threads} {input.reference} {params.prefix} &> {log}
+	bowtie2-build --threads {threads} {input.reference} {params.prefix} &> /dev/null
 
 	touch {output.status}
 	"""
@@ -21,9 +20,9 @@ rule bowtie:
 		r2 = rules.scrub.output.r2,
 		status = rules.index.output.status,
 	output:
-		bam = OUTDIR / "{sample}" / "aligned" / "{sample}.bam",
-		coverage = OUTDIR / "{sample}" / "coverage.{sample}.tsv",
-		status = OUTDIR / "status" / "aligned.{sample}.txt",
+		bam = OUTDIR / "{sample}" / "ref-denovo" / "{sample}.bam",
+		coverage = OUTDIR / "{sample}" / "ref-denovo" / "coverage.{sample}.tsv",
+		status = OUTDIR / "status" / "bowtie2.{sample}.txt",
 	params:
 		prefix = rules.index.params.prefix
 	threads: config["threads"]["bowtie"]
@@ -49,17 +48,17 @@ rule bamtofastq:
 	input:
 		bam = rules.bowtie.output.bam,
 	output:
-		r1 = OUTDIR / "{sample}" / "aligned" / "{sample}_refg_r1.fastq.gz",
-		r2 = OUTDIR / "{sample}" / "aligned" / "{sample}_refg_r2.fastq.gz",
-		status = OUTDIR / "status" / "aligned.{sample}.txt",
+		r1 = OUTDIR / "{sample}" / "ref-denovo" / "{sample}_refg_r1.fastq.gz",
+		r2 = OUTDIR / "{sample}" / "ref-denovo" / "{sample}_refg_r2.fastq.gz",
+		status = OUTDIR / "status" / "bamtofastq.{sample}.txt",
 	threads: config["threads"]["bedtools"]
 	log: OUTDIR / "{sample}" / "log" / "bowtie2.{sample}.log"
-	conda: "../envs/bowtie.yaml"
+	conda: "../envs/misc.yaml"
 	shell:"""
-	bamToFastq \
+	bedtools bamtofastq \
 	-i {input.bam} \
 	-fq {output.r1} \
-	-fq2 {output.r2}
+	-fq2 {output.r2} 2> {log}
 
 	touch {output.status}
 	"""
@@ -70,15 +69,15 @@ rule mapping_shovill:
 		r1 = rules.bamtofastq.output.r1,
 		r2 = rules.bamtofastq.output.r2,
 	output:
-		status = OUTDIR / "status" / "mapping.shovill.{sample}.txt",
-		outdir = directory(OUTDIR / "{sample}" / "mapping.shovill"),
-		contig = OUTDIR / "{sample}" / "mapping.shovill" / "contigs.fa",
+		status = OUTDIR / "status" / "ref-denovo.shovill.{sample}.txt",
+		outdir = directory(OUTDIR / "{sample}" / "ref-denovo" / "shovill"),
+		contig = OUTDIR / "{sample}" / "ref-denovo" / "shovill" / "contigs.fa",
 	params:
 		gsize = "1.04M",
 		depth = 200,
 	conda: "../envs/shovill.yaml"
-	log: OUTDIR / "{sample}" / "log" / "shovill.{sample}.log"
-	benchmark: OUTDIR / "{sample}" / "benchmark" / "shovill.{sample}.txt"
+	log: OUTDIR / "{sample}" / "log" / "ref-denovo.shovill.{sample}.log"
+	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.shovill.{sample}.txt"
 	threads: config["threads"]["shovill"]
 	shell:"""
 	shovill \
@@ -88,7 +87,7 @@ rule mapping_shovill:
 	--gsize {params.gsize} \
 	--depth {params.depth} \
 	--force \
-	--cpus {threads} 2> {log}
+	--cpus {threads} 2>> {log} 1>> {log}
 
 	touch {output.status}
 	"""
@@ -97,16 +96,16 @@ rule mapping_scaffold:
 	input: 
 		contigs = rules.mapping_shovill.output.contig
 	output:
-		outdir = directory(OUTDIR / "{sample}" / "mapping_scaffold"),
-		scaffold = OUTDIR / "{sample}" / "mapping_scaffold" / "ragtag.scaffold.fasta",
-		status = OUTDIR / "status" / "mapping_scaffold.{sample}.txt",
+		outdir = directory(OUTDIR / "{sample}" / "ref-denovo" / "scaffold"),
+		scaffold = OUTDIR / "{sample}" / "ref-denovo" / "scaffold" / "ragtag.scaffold.fasta",
+		status = OUTDIR / "status" / "ref-denovo_scaffold.{sample}.txt",
 	params:
 		ref = SCAFFOLDREF,
 		min_len = 500
 	threads: config['threads']['ragtag']
 	conda: "../envs/scaffold.yaml"
-	log: OUTDIR / "{sample}" / "log" / "mapping_scaffold.{sample}.log"
-	benchmark: OUTDIR / "{sample}" / "benchmark" / "mapping_scaffold.{sample}.txt"
+	log: OUTDIR / "{sample}" / "log" / "ref-denovo_scaffold.{sample}.log"
+	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo_scaffold.{sample}.txt"
 	shell:"""
 	ragtag.py scaffold \
 	{params.ref} \
@@ -126,12 +125,12 @@ rule mapping_gapfiller:
 		r1 = rules.scrub.output.r1,
 		r2 = rules.scrub.output.r2,
 	output:
-		filled = OUTDIR / "{sample}" / "mapping_gap2seq" / "filled.fasta",
-		status = OUTDIR / "status" / "mapping_gap2seq.{sample}.txt",
+		filled = OUTDIR / "{sample}" / "ref-denovo" / "gap2seq" / "filled.fasta",
+		status = OUTDIR / "status" / "ref-denovo.gap2seq.{sample}.txt",
 	threads: config['threads']['gap2seq']
 	conda: "../envs/scaffold.yaml"
-	log: OUTDIR / "{sample}" / "log" / "mapping_gap2seq.{sample}.log"
-	benchmark: OUTDIR / "{sample}" / "benchmark" / "mapping_gap2seq.{sample}.txt"
+	log: OUTDIR / "{sample}" / "log" / "ref-denovo.gap2seq.{sample}.log"
+	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.gap2seq.{sample}.txt"
 	shell:"""
 	EXITCODE=$(Gap2Seq.sh \
 	--scaffolds {input.scaffold} \
@@ -153,9 +152,9 @@ rule mapping_blastompa:
 	input:
 		contig = rules.mapping_scaffold.output.scaffold,
 	output:
-		tab = OUTDIR / "{sample}" / "mapping_blast" / "mapping_blast.ompa.tab",
-		status = OUTDIR / "status" / "mapping_blastn.{sample}.txt"
-	log: OUTDIR / "{sample}" / "log" / "mapping_blastompa.{sample}.log"
+		tab = OUTDIR / "{sample}" / "ref-denovo" / "blast" / "blast.ompa.tab",
+		status = OUTDIR / "status" / "ref-denovo.blastn.{sample}.txt"
+	log: OUTDIR / "{sample}" / "log" / "ref-denovo.blastompa.{sample}.log"
 	params:
 		outfmt = 6,
 		db = OMPABLASTDB,
@@ -169,7 +168,7 @@ rule mapping_blastompa:
 	-max_target_seqs {params.targets} \
 	-html \
 	-outfmt {params.outfmt} \
-	-out {output.tab}
+	-out {output.tab} 2> {log}
 
 	touch {output.status}
 	"""
@@ -178,12 +177,12 @@ rule mapping_mlst:
     input:
         rules.mapping_scaffold.output.scaffold
     output:
-        generic = OUTDIR / "{sample}" / "mapping_mlst" / "{sample}.genome.chlamydiales.mlst.txt",
-        ct = OUTDIR / "{sample}" / "mapping_mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
-        plasmid =  OUTDIR / "{sample}" / "mapping_mlst" / "{sample}.genome.plasmid.mlst.txt",
-        status = OUTDIR / "status" / "mapping_mlst.{sample}.txt",
-    log: OUTDIR / "{sample}" / "log" / "mapping_mlst.{sample}.log"
-    benchmark: OUTDIR / "{sample}" / "benchmark" / "mapping_mlst.{sample}.txt"
+        generic = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
+        ct = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
+        plasmid =  OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.plasmid.mlst.txt",
+        status = OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt",
+    log: OUTDIR / "{sample}" / "log" / "ref-denovo.mlst.{sample}.log"
+    benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.mlst.{sample}.txt"
     conda: "../envs/mlst.yaml"
     params:
         dbgeneric = MLSTDBLOC / "chlamydiales",
