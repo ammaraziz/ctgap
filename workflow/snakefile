@@ -34,10 +34,13 @@ if not SAMPLES:
 
 rule all:
 	input:
-		#expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
-		expand(OUTDIR / "status" / "mapping_mlst.{sample}.txt", sample = SAMPLES),
-		expand(OUTDIR / "status" / "mapping_blastn.{sample}.txt", sample = SAMPLES),
-		#OUTDIR / "status" / "collate.blast.txt",
+		# denovo
+		# expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
+		# OUTDIR / "status" / "collate.blast.txt",
+		# ref-denovo
+		expand(OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt", sample = SAMPLES),
+		expand(OUTDIR / "status" / "ref-denovo.blastn.{sample}.txt", sample = SAMPLES),
+		
 		# trim and qc
 		# expand(OUTDIR / "status" / "trim.{sample}.txt", sample = SAMPLES),
 		# expand(OUTDIR / "status" / "scrub.{sample}.txt", sample = SAMPLES),
