@@ -1,8 +1,8 @@
 name: ctgap_bowtie
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
 dependencies:
   - bowtie2
-  - samtools
+  - samtools=1.19
   - bcftools

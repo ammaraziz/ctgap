@@ -1,15 +1,15 @@
-indir: /path/to/input
-outdir: /path/to/output
+indir: /home/amar/Desktop/ctgap_input
+outdir: /home/amar/Desktop/ctgap_output
 sample_sheet: config/samples.csv
 
 adapters: resources/adapters.fasta
 ctReference: resources/ctReferences/all.fasta
 scaffoldReference: resources/scaffoldReference.fasta
-homoReference: resources/grch38.fasta.gz
-krakenDB: resources/standardDB
+homoReference: /home/amar/Desktop/ctgap_input/human/chm13v2.0.fa.gz
+krakenDB: /home/amar/Desktop/ctgap_input/db/
 ompaBlastDB: resources/ompaBlastDB/ompa20
 mlstDBLoc: resources/pubmlst/
-mode: both # [denovo, reference-denovo, both]
+mode: ref-denovo # [denovo, reference-denovo, both]
 reference: plurality # [plurality, reference_24, reference_name]
 
 # ensure conda is used without user having to specify
