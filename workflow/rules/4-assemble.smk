@@ -82,3 +82,63 @@ rule gapfiller:
 
 	touch {output.status}
 	"""
+
+rule blastompa:
+	input:
+		contig = rules.scaffold.output.scaffold,
+	output:
+		tab = OUTDIR / "{sample}" / "blast" / "blast.ompa.tab",
+		status = OUTDIR / "status" / "blastn.{sample}.txt"
+	log: OUTDIR / "{sample}" / "log" / "blastompa.{sample}.log"
+	params:
+		outfmt = 6,
+		db = OMPABLASTDB,
+		targets = 1
+	threads: config["threads"]["blast"]
+	conda: "../envs/misc.yaml"
+	shell:"""
+	blastn \
+	-query {input.contig} \
+	-db {params.db} \
+	-max_target_seqs {params.targets} \
+	-html \
+	-outfmt {params.outfmt} \
+	-out {output.tab}
+
+	touch {output.status}
+	"""
+
+rule mlst:
+    input:
+        rules.scaffold.output.scaffold
+    output:
+        generic = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
+        ct = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
+        plasmid =  OUTDIR / "{sample}" / "mlst" / "{sample}.genome.plasmid.mlst.txt",
+        status = OUTDIR / "status" / "mlst.{sample}.txt",
+    log: OUTDIR / "{sample}" / "log" / "mlst.{sample}.log"
+    benchmark: OUTDIR / "{sample}" / "benchmark" / "mlst.{sample}.txt"
+    conda: "../envs/mlst.yaml"
+    params:
+        dbgeneric = MLSTDBLOC / "chlamydiales",
+        dbct = MLSTDBLOC / "c.trachomatis",
+        dbplasmid = MLSTDBLOC / "plasmid",
+    threads: config["threads"]["mlst"]
+    shell:"""
+    echo -e "chlamydiales\n" >> {log}
+    claMLST search \
+    {params.dbgeneric} \
+    {input} > {output.generic} 2>> {log}
+
+    echo -e "\nctrachomatis\n" >> {log}
+    claMLST search \
+    {params.dbct} \
+    {input} > {output.ct} 2>> {log}
+
+    echo -e "\nplasmid\n" >> {log}
+    claMLST search \
+    {params.dbplasmid} \
+    {input} > {output.plasmid} 2>> {log}
+
+    touch {output.status}
+    """

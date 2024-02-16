@@ -120,7 +120,7 @@ rule mapping_scaffold:
     touch {output.status}
 	"""
 
-rule gapfiller:
+rule mapping_gapfiller:
 	input:
 		scaffold = rules.mapping_scaffold.output.scaffold,
 		r1 = rules.scrub.output.r1,
@@ -148,3 +148,63 @@ rule gapfiller:
 
 	touch {output.status}
 	"""
+
+rule mapping_blastompa:
+	input:
+		contig = rules.mapping_scaffold.output.scaffold,
+	output:
+		tab = OUTDIR / "{sample}" / "mapping_blast" / "mapping_blast.ompa.tab",
+		status = OUTDIR / "status" / "mapping_blastn.{sample}.txt"
+	log: OUTDIR / "{sample}" / "log" / "mapping_blastompa.{sample}.log"
+	params:
+		outfmt = 6,
+		db = OMPABLASTDB,
+		targets = 1
+	threads: config["threads"]["blast"]
+	conda: "../envs/misc.yaml"
+	shell:"""
+	blastn \
+	-query {input.contig} \
+	-db {params.db} \
+	-max_target_seqs {params.targets} \
+	-html \
+	-outfmt {params.outfmt} \
+	-out {output.tab}
+
+	touch {output.status}
+	"""
+
+rule mapping_mlst:
+    input:
+        rules.mapping_scaffold.output.scaffold
+    output:
+        generic = OUTDIR / "{sample}" / "mapping_mlst" / "{sample}.genome.chlamydiales.mlst.txt",
+        ct = OUTDIR / "{sample}" / "mapping_mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
+        plasmid =  OUTDIR / "{sample}" / "mapping_mlst" / "{sample}.genome.plasmid.mlst.txt",
+        status = OUTDIR / "status" / "mapping_mlst.{sample}.txt",
+    log: OUTDIR / "{sample}" / "log" / "mapping_mlst.{sample}.log"
+    benchmark: OUTDIR / "{sample}" / "benchmark" / "mapping_mlst.{sample}.txt"
+    conda: "../envs/mlst.yaml"
+    params:
+        dbgeneric = MLSTDBLOC / "chlamydiales",
+        dbct = MLSTDBLOC / "c.trachomatis",
+        dbplasmid = MLSTDBLOC / "plasmid",
+    threads: config["threads"]["mlst"]
+    shell:"""
+    echo -e "chlamydiales\n" >> {log}
+    claMLST search \
+    {params.dbgeneric} \
+    {input} > {output.generic} 2>> {log}
+
+    echo -e "\nctrachomatis\n" >> {log}
+    claMLST search \
+    {params.dbct} \
+    {input} > {output.ct} 2>> {log}
+
+    echo -e "\nplasmid\n" >> {log}
+    claMLST search \
+    {params.dbplasmid} \
+    {input} > {output.plasmid} 2>> {log}
+
+    touch {output.status}
+    """

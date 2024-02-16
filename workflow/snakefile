@@ -36,6 +36,8 @@ if not SAMPLES:
 rule all:
 	input:
 		expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
+		expand(OUTDIR / "status" / "mapping_mlst.{sample}.txt", sample = SAMPLES),
+		expand(OUTDIR / "status" / "mapping_blastn.{sample}.txt", sample = SAMPLES),
 		OUTDIR / "status" / "collate.blast.txt",
 		# trim and qc
 		# expand(OUTDIR / "status" / "trim.{sample}.txt", sample = SAMPLES),
@@ -69,6 +71,4 @@ elif config['mode'] == 'both':
 	include: "rules/5-align.smk"
 
 # analysis module
-include: "rules/blast.smk"
-include: "rules/mlst.smk"
-include: "rules/6-collate.smk"
+include: "rules/collate.smk"
