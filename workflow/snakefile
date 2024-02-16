@@ -7,20 +7,19 @@ include: "rules/common.smk"
 
 INDIR = Path(config["indir"])
 OUTDIR = Path(config["outdir"])
-KRAKENDB = config["krakenDB"]
-HUMANREF = config["homoReference"]
-ADAPTERS = config["adapters"]
-OMPABLASTDB = config["ompaBlastDB"]
-SCAFFOLDREF = config["scaffoldReference"]
+KRAKENDB = Path(config["krakenDB"])
+HUMANREF = Path(config["homoReference"])
+ADAPTERS = Path(config["adapters"])
+OMPABLASTDB = Path(config["ompaBlastDB"])
+SCAFFOLDREF = Path(config["scaffoldReference"])
 MLSTDBLOC = Path(config["mlstDBLoc"])
-SAMPLESHEET = config['sample_sheet']
+SAMPLESHEET = Path(config['sample_sheet'])
 MODE = config['mode'] 
 
-
 if config["reference"] == "plurality":
-	CTREF = "resources/ctReferences/ct_plurality_consensus.fasta"
-if config["reference"] == "reference_24":
-	CTREF = "resources/ctReferences/ct_references_24.fasta"
+	CTREF = Path("resources/ctReferences/ct_plurality_consensus.fasta")
+elif config["reference"] == "reference_24":
+	CTREF = Path("resources/ctReferences/ct_references_24.fasta")
 else:
 	CTREF = Path(f"resources/ctReferences/{config['reference']}")
 
