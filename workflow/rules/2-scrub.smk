@@ -10,6 +10,7 @@ rule scrub:
 		status = OUTDIR / "status" / "scrub.{sample}.txt"
 	params:
 		db = KRAKENDB,
+		dbname = KRAKENDB.stem,
 		human = HUMANREF,
 		minlen = 50,
 		kraken_taxa_extract = 51291, #Chlamydiales
@@ -37,8 +38,8 @@ rule scrub:
 	-o {output.r1} {output.r2} \
 	--extract \
 	--kraken-taxa {params.kraken_taxa_extract} \
-	--kraken-reads {params.workdir}/0-standardDB.kraken \
-	--kraken-report {params.workdir}/0-standardDB.report 2>> {log}	
+	--kraken-reads {params.workdir}/0-{params.dbname}.kraken \
+	--kraken-report {params.workdir}/0-{params.dbname}.report 2>> {log}
 
 	touch {output.status}
 	"""
