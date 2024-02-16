@@ -6,3 +6,4 @@ dependencies:
   - csvtk
   - blast
   - seqkit
+  - bedtools
