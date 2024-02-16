@@ -21,8 +21,7 @@ rule shovill:
 	--outdir {output.outdir} \
 	--gsize {params.gsize} \
 	--depth {params.depth} \
-	--force \
-	--cpus {threads} 2> {log}
+	--force --cpus {threads} 2>> {log} 1>> {log}
 
 	touch {output.status}
 	"""
@@ -103,7 +102,7 @@ rule blastompa:
 	-max_target_seqs {params.targets} \
 	-html \
 	-outfmt {params.outfmt} \
-	-out {output.tab}
+	-out {output.tab} 2> {log}
 
 	touch {output.status}
 	"""
