@@ -9,8 +9,8 @@ rule fastp:
 		json = OUTDIR / "{sample}" / "trim" /"{sample}.json",
 		status = OUTDIR / "status" / "trim.{sample}.txt",
 	params:
-		adapters = "resources/adapters.fasta",
-		barcodes = "resources/MSS_barcodes.fasta",
+		adapters = ADAPTERS,
+		barcodes = BARCODES,
 		window_size = 1,
 		mean_quality = 3,
 		right_window_size = 4,

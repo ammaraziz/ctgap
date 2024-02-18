@@ -1,15 +1,18 @@
 rule index:
 	message: "Indexing references"
+	input:
+		reference = REF,
+		refset24 = REFSET,
 	output:
 		status = OUTDIR / "ref-denovo" / "status" / "references" / "reference.status"
 	params:
-		prefix_ref = f"resources/references/{ORG}/{REF.stem}",
-		prefix_ref24 = f"resources/references/{ORG}/{REF.stem}",
+		prefix_ref = REF.stem,
+		prefix_ref24 =  REFSET.stem,
 	threads: config["threads"]["bowtieindex"]
 	conda: "../envs/bowtie.yaml"
 	shell:"""
 	bowtie2-build --threads {threads} {input.reference} {params.prefix_ref} &> /dev/null
-	bowtie2-build --threads {threads} {input.reference} {params.prefix_ref24} &> /dev/null
+	bowtie2-build --threads {threads} {input.refset24} {params.prefix_ref24} &> /dev/null
 
 	touch {output.status}
 	"""
@@ -242,7 +245,7 @@ rule ref_mlst:
 
 rule ref_collate_coverage:
 	input:
-		coverages = expand(OUTDIR / "{sample}" / "ref-denovo" / "coverage.ref24.{sample}.tsv", sample = SAMPLES),
+		coverages = expand(OUTDIR / "{sample}" / "ref-denovo" / "coverage.{sample}.tsv", sample = SAMPLES),
 	output:
 		coverages = OUTDIR / "denovo.coverage.tsv",
 		status = OUTDIR / "status" / "refdenovo.collage.coverage.txt",

@@ -1,16 +1,14 @@
-indir : /path/to/input
+indir:  /Users/aaziz/Downloads/ctgap_input
+#indir : /path/to/input
 outdir: /path/to/output
 sample_sheet: config/samples.csv
 
 mode: both # [denovo, reference-denovo, both]
 reference: plurality # [plurality, reference_24, reference_name]
 organism: ct # [ct]
+resourcesPath: resources/
 
-adapters: resources/ct/adapters.fasta
-referenceSet: resources/references/ct_refset_24.fasta
-scaffoldReference: resources/ct_scaffold.fasta
 homoReference: resources/grch38.fasta.gzq
-
 krakenDB: resources/standardDB
 ompaBlastDB: resources/ct/ompaBlastDB/ompa20
 mlstDB: resources/ct/pubmlst/

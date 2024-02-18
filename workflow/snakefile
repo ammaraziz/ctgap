@@ -8,29 +8,32 @@ include: "rules/common.smk"
 # inputs
 INDIR = Path(config["indir"])
 OUTDIR = Path(config["outdir"])
-SAMPLESHEET = Path(config['sample_sheet'])
+SAMPLESHEET = Path(config["sample_sheet"])
+RESOURCES = Path(config["resourcesPath"])
+
+#misc
+MODE = config["mode"]
+ORG = config["organism"]
+REFSET = RESOURCES / ORG / "refset.fasta"
+ADAPTERS = RESOURCES / ORG / "adapters.fasta"
+BARCODES = RESOURCES / ORG / "barcodes.fasta"
+SCAFFOLDREF = RESOURCES / ORG / "scaffold.fasta"
 
 # references
 HUMANREF = Path(config["homoReference"])
-SCAFFOLDREF = Path(config["scaffoldReference"])
 
 # databaes
 KRAKENDB = Path(config["krakenDB"])
 OMPABLASTDB = Path(config["ompaBlastDB"])
 MLSTDB = Path(config["mlstDB"])
 
-#misc
-ADAPTERS = Path(config["adapters"])
-MODE = config['mode']
-ORG = config['organism']
-
 # reference configuration
 if config["reference"] == "plurality":
-	REF = Path("resources/references/{ORG}/ct_plurality.fasta")
-elif config["reference"] == "reference_24":
-	REF = Path("resources/references/{ORG}/ct_refset_24.fasta")
+	REF = RESOURCES / ORG / "plurality.fasta"
+elif config["reference"] == "reference_set":
+	REF = RESOURCES / ORG / "refset.fasta"
 else:
-	REF = Path(f"resources/references/{ORG}/individual/{config['reference']}")
+	REF = RESOURCES / ORG / f"{config['reference']}"
 
 # get samples
 SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
@@ -44,11 +47,12 @@ if not SAMPLES:
 rule all:
 	input:
 		# denovo
-		#OUTDIR / "status" / "denovo.collate.blast.txt",
+		OUTDIR / "status" / "denovo.collate.blast.txt",
+		expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
 		# ref-denovo
-		expand(OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt", sample = SAMPLES),
-		OUTDIR / "status" / "refdenovo.collage.coverage.txt",
-		OUTDIR / "status" / "refdenovo.collate.blast.txt",
+		# expand(OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt", sample = SAMPLES),
+		# OUTDIR / "status" / "refdenovo.collage.coverage.txt",
+		# OUTDIR / "status" / "refdenovo.collate.blast.txt",
 
 # common modules
 include: "rules/1-trim.smk"
@@ -56,11 +60,11 @@ include: "rules/2-scrub.smk"
 include: "rules/3-qc.smk"
 
 # modes module
-if config['mode'] == 'denovo':
+if config["mode"] == "denovo":
 	include: "rules/4-assemble.smk"
-elif config['mode'] == 'ref-denovo':
+elif config["mode"] == "ref-denovo":
 	include: "rules/5-align.smk"
-elif config['mode'] == 'both':
+elif config["mode"] == "both":
 	include: "rules/4-assemble.smk"
 	include: "rules/5-align.smk"
 
