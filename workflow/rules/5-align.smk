@@ -45,6 +45,37 @@ rule bowtie:
 	touch {output.status}
 	"""
 
+rule bowtie_ref24:
+	message: "Align against reference set"
+	input:
+		r1 = rules.scrub.output.r1,
+		r2 = rules.scrub.output.r2,
+		status = rules.index.output.status,
+	output:
+		bam = OUTDIR / "{sample}" / "ref-denovo" / "{sample}.ref24.bam",
+		coverage = OUTDIR / "{sample}" / "ref-denovo" / "coverage.ref24.{sample}.tsv",
+		status = OUTDIR / "status" / "bowtie2.ref24.{sample}.txt",
+	params:
+		prefix = rules.index.params.prefix_ref24
+	threads: config["threads"]["bowtie"]
+	log: OUTDIR / "{sample}" / "log" / "bowtie2.ref24.{sample}.log"
+	conda: "../envs/bowtie.yaml"
+	shell:"""
+	bowtie2 -x \
+	{params.prefix} \
+	-1 {input.r1} \
+	-2 {input.r2} \
+	--threads {threads} | \
+	samtools view -bSh - | \
+	samtools sort -n -@{threads} \
+	-o {output.bam} 2> {log} 1> {log}
+
+	samtools index {output.bam}
+	samtools coverage {output.bam} > {output.coverage}
+
+	touch {output.status}
+	"""
+
 rule bamtofastq:
 	input:
 		bam = rules.bowtie.output.bam,
