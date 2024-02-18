@@ -29,17 +29,17 @@ SAMPLES = set(SAMPLE_NAME)
 # dictReads = parseSamples(SAMPLESHEET)
 # SAMPLES = list(dictReads.keys())
 if not SAMPLES:
-	pprint("[yellow]No input samples were detected. Check the files are named properly: {sample_name}_{pair}[/yellow]")
+	pprint("[yellow]No input samples were detected. Check the files are named properly:[/yellow] [green bold]{sample_name}_{pair}[/green bold]")
 	sys.exit()
 
 rule all:
 	input:
 		# denovo
-		# expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
-		# OUTDIR / "status" / "collate.blast.txt",
+		expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
+		OUTDIR / "status" / "collate.blast.txt",
 		# ref-denovo
-		expand(OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt", sample = SAMPLES),
-		expand(OUTDIR / "status" / "ref-denovo.blastn.{sample}.txt", sample = SAMPLES),
+		# expand(OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt", sample = SAMPLES),
+		# expand(OUTDIR / "status" / "ref-denovo.blastn.{sample}.txt", sample = SAMPLES),
 		
 		# trim and qc
 		# expand(OUTDIR / "status" / "trim.{sample}.txt", sample = SAMPLES),

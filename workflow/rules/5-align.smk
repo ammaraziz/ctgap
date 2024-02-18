@@ -63,7 +63,7 @@ rule bamtofastq:
 	touch {output.status}
 	"""
 
-rule mapping_shovill:
+rule ref_shovill:
 	message: "Assembling Sample {wildcards.sample}"
 	input:
 		r1 = rules.bamtofastq.output.r1,
@@ -92,9 +92,9 @@ rule mapping_shovill:
 	touch {output.status}
 	"""
 
-rule mapping_scaffold:
+rule ref_scaffold:
 	input: 
-		contigs = rules.mapping_shovill.output.contig
+		contigs = rules.ref_shovill.output.contig
 	output:
 		outdir = directory(OUTDIR / "{sample}" / "ref-denovo" / "scaffold"),
 		scaffold = OUTDIR / "{sample}" / "ref-denovo" / "scaffold" / "ragtag.scaffold.fasta",
@@ -119,9 +119,9 @@ rule mapping_scaffold:
     touch {output.status}
 	"""
 
-rule mapping_gapfiller:
+rule ref_gapfiller:
 	input:
-		scaffold = rules.mapping_scaffold.output.scaffold,
+		scaffold = rules.ref_scaffold.output.scaffold,
 		r1 = rules.scrub.output.r1,
 		r2 = rules.scrub.output.r2,
 	output:
@@ -148,9 +148,9 @@ rule mapping_gapfiller:
 	touch {output.status}
 	"""
 
-rule mapping_blastompa:
+rule ref_blastompa:
 	input:
-		contig = rules.mapping_scaffold.output.scaffold,
+		contig = rules.ref_gapfiller.output.filled,
 	output:
 		tab = OUTDIR / "{sample}" / "ref-denovo" / "blast" / "blast.ompa.tab",
 		status = OUTDIR / "status" / "ref-denovo.blastn.{sample}.txt"
@@ -173,9 +173,9 @@ rule mapping_blastompa:
 	touch {output.status}
 	"""
 
-rule mapping_mlst:
+rule ref_mlst:
     input:
-        rules.mapping_scaffold.output.scaffold
+        rules.ref_gapfiller.output.filled,
     output:
         generic = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
         ct = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",

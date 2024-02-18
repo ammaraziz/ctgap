@@ -84,7 +84,7 @@ rule gapfiller:
 
 rule blastompa:
 	input:
-		contig = rules.scaffold.output.scaffold,
+		contig = rules.gapfiller.output.filled,
 	output:
 		tab = OUTDIR / "{sample}" / "blast" / "blast.ompa.tab",
 		status = OUTDIR / "status" / "blastn.{sample}.txt"
@@ -109,7 +109,7 @@ rule blastompa:
 
 rule mlst:
     input:
-        rules.scaffold.output.scaffold
+        rules.gapfiller.output.filled
     output:
         generic = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
         ct = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
