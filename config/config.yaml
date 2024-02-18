@@ -1,20 +1,23 @@
-indir:  /path/to/input
+indir:  /Users/aaziz/Downloads/ctgap_input
+indir : /path/to/input
 outdir: /path/to/output
 sample_sheet: config/samples.csv
 
-adapters: resources/adapters.fasta
-ctReference: resources/ctReferences/all.fasta
-scaffoldReference: resources/scaffoldReference.fasta
-homoReference: resources/grch38.fasta.gz
-krakenDB: resources/standardDB
-ompaBlastDB: resources/ompaBlastDB/ompa20
-mlstDBLoc: resources/pubmlst/
 mode: both # [denovo, reference-denovo, both]
 reference: plurality # [plurality, reference_24, reference_name]
+organism: ct # [ct]
+
+adapters: resources/ct/adapters.fasta
+referenceSet: resources/references/ct_refset_24.fasta
+scaffoldReference: resources/ct_scaffold.fasta
+homoReference: resources/grch38.fasta.gzq
+
+krakenDB: resources/standardDB
+ompaBlastDB: resources/ct/ompaBlastDB/ompa20
+mlstDB: resources/ct/pubmlst/
 
 # ensure conda is used without user having to specify
 use_conda: true
-
 
 # numbe of cpus used per tool/rule
 threads:
