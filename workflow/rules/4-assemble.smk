@@ -119,9 +119,9 @@ rule mlst:
 	benchmark: OUTDIR / "{sample}" / "benchmark" / "mlst.{sample}.txt"
 	conda: "../envs/mlst.yaml"
 	params:
-		dbgeneric = MLSTDBLOC / "chlamydiales",
-		dbct = MLSTDBLOC / "c.trachomatis",
-		dbplasmid = MLSTDBLOC / "plasmid",
+		dbgeneric = MLSTDB / "chlamydiales",
+		dbct = MLSTDB / "c.trachomatis",
+		dbplasmid = MLSTDB / "plasmid",
 	threads: config["threads"]["mlst"]
 	shell:"""
 	echo -e "chlamydiales\n" >> {log}

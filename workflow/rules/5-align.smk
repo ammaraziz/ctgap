@@ -1,20 +1,21 @@
 rule index:
-	message: "Indexing Ct references"
-	input:
-		reference = CTREF
+	message: "Indexing references"
 	output:
-		status = OUTDIR / "status" / "ctReferences" / "ctReference.status"
+		status = OUTDIR / "ref-denovo" / "status" / "references" / "reference.status"
 	params:
-		prefix = f"resources/ctReferences/{CTREF.stem}"
+		prefix_ref = f"resources/references/{ORG}/{REF.stem}",
+		prefix_ref24 = f"resources/references/{ORG}/{REF.stem}",
 	threads: config["threads"]["bowtieindex"]
 	conda: "../envs/bowtie.yaml"
 	shell:"""
-	bowtie2-build --threads {threads} {input.reference} {params.prefix} &> /dev/null
+	bowtie2-build --threads {threads} {input.reference} {params.prefix_ref} &> /dev/null
+	bowtie2-build --threads {threads} {input.reference} {params.prefix_ref24} &> /dev/null
 
 	touch {output.status}
 	"""
 
 rule bowtie:
+	message: "Aligning to specified reference"
 	input:
 		r1 = rules.scrub.output.r1,
 		r2 = rules.scrub.output.r2,
@@ -24,7 +25,7 @@ rule bowtie:
 		coverage = OUTDIR / "{sample}" / "ref-denovo" / "coverage.{sample}.tsv",
 		status = OUTDIR / "status" / "bowtie2.{sample}.txt",
 	params:
-		prefix = rules.index.params.prefix
+		prefix = rules.index.params.prefix_ref
 	threads: config["threads"]["bowtie"]
 	log: OUTDIR / "{sample}" / "log" / "bowtie2.{sample}.log"
 	conda: "../envs/bowtie.yaml"
@@ -185,9 +186,9 @@ rule ref_mlst:
 	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.mlst.{sample}.txt"
 	conda: "../envs/mlst.yaml"
 	params:
-		dbgeneric = MLSTDBLOC / "chlamydiales",
-		dbct = MLSTDBLOC / "c.trachomatis",
-		dbplasmid = MLSTDBLOC / "plasmid",
+		dbgeneric = MLSTDB / "chlamydiales",
+		dbct = MLSTDB / "c.trachomatis",
+		dbplasmid = MLSTDB / "plasmid",
 	threads: config["threads"]["mlst"]
 	shell:"""
 	echo -e "chlamydiales\n" >> {log}
@@ -210,7 +211,7 @@ rule ref_mlst:
 
 rule ref_collate_coverage:
 	input:
-		coverages = expand(OUTDIR / "{sample}" / "ref-denovo" / "coverage.{sample}.tsv", sample = SAMPLES),
+		coverages = expand(OUTDIR / "{sample}" / "ref-denovo" / "coverage.ref24.{sample}.tsv", sample = SAMPLES),
 	output:
 		coverages = OUTDIR / "denovo.coverage.tsv",
 		status = OUTDIR / "status" / "refdenovo.collage.coverage.txt",

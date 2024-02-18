@@ -5,23 +5,32 @@ from rich import print as pprint
 configfile: "config/config.yaml"
 include: "rules/common.smk"
 
+# inputs
 INDIR = Path(config["indir"])
 OUTDIR = Path(config["outdir"])
-KRAKENDB = Path(config["krakenDB"])
-HUMANREF = Path(config["homoReference"])
-ADAPTERS = Path(config["adapters"])
-OMPABLASTDB = Path(config["ompaBlastDB"])
-SCAFFOLDREF = Path(config["scaffoldReference"])
-MLSTDBLOC = Path(config["mlstDBLoc"])
 SAMPLESHEET = Path(config['sample_sheet'])
-MODE = config['mode'] 
 
+# references
+HUMANREF = Path(config["homoReference"])
+SCAFFOLDREF = Path(config["scaffoldReference"])
+
+# databaes
+KRAKENDB = Path(config["krakenDB"])
+OMPABLASTDB = Path(config["ompaBlastDB"])
+MLSTDB = Path(config["mlstDB"])
+
+#misc
+ADAPTERS = Path(config["adapters"])
+MODE = config['mode']
+ORG = config['organism']
+
+# reference configuration
 if config["reference"] == "plurality":
-	CTREF = Path("resources/ctReferences/ct_plurality_consensus.fasta")
+	REF = Path("resources/references/{ORG}/ct_plurality.fasta")
 elif config["reference"] == "reference_24":
-	CTREF = Path("resources/ctReferences/ct_references_24.fasta")
+	REF = Path("resources/references/{ORG}/ct_refset_24.fasta")
 else:
-	CTREF = Path(f"resources/ctReferences/{config['reference']}")
+	REF = Path(f"resources/references/{ORG}/individual/{config['reference']}")
 
 # get samples
 SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
