@@ -116,7 +116,7 @@ rule ref_scaffold:
 	-u \
 	-t {threads} 2> {log}
 
-    touch {output.status}
+	touch {output.status}
 	"""
 
 rule ref_gapfiller:
@@ -141,9 +141,9 @@ rule ref_gapfiller:
 	# gap2seq will fail if filling fails.
 	# capture error, copy scaffolded as filled.
 	if [ $EXITCODE -eq 1 ]
-    then
-        cp {input.scaffold} {output.filled}
-    fi
+	then
+		cp {input.scaffold} {output.filled}
+	fi
 
 	touch {output.status}
 	"""
@@ -174,36 +174,51 @@ rule ref_blastompa:
 	"""
 
 rule ref_mlst:
-    input:
-        rules.ref_gapfiller.output.filled,
-    output:
-        generic = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
-        ct = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
-        plasmid =  OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.plasmid.mlst.txt",
-        status = OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt",
-    log: OUTDIR / "{sample}" / "log" / "ref-denovo.mlst.{sample}.log"
-    benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.mlst.{sample}.txt"
-    conda: "../envs/mlst.yaml"
-    params:
-        dbgeneric = MLSTDBLOC / "chlamydiales",
-        dbct = MLSTDBLOC / "c.trachomatis",
-        dbplasmid = MLSTDBLOC / "plasmid",
-    threads: config["threads"]["mlst"]
-    shell:"""
-    echo -e "chlamydiales\n" >> {log}
-    claMLST search \
-    {params.dbgeneric} \
-    {input} > {output.generic} 2>> {log}
+	input:
+		rules.ref_gapfiller.output.filled,
+	output:
+		generic = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
+		ct = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
+		plasmid =  OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.plasmid.mlst.txt",
+		status = OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt",
+	log: OUTDIR / "{sample}" / "log" / "ref-denovo.mlst.{sample}.log"
+	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.mlst.{sample}.txt"
+	conda: "../envs/mlst.yaml"
+	params:
+		dbgeneric = MLSTDBLOC / "chlamydiales",
+		dbct = MLSTDBLOC / "c.trachomatis",
+		dbplasmid = MLSTDBLOC / "plasmid",
+	threads: config["threads"]["mlst"]
+	shell:"""
+	echo -e "chlamydiales\n" >> {log}
+	claMLST search \
+	{params.dbgeneric} \
+	{input} > {output.generic} 2>> {log}
 
-    echo -e "\nctrachomatis\n" >> {log}
-    claMLST search \
-    {params.dbct} \
-    {input} > {output.ct} 2>> {log}
+	echo -e "\nctrachomatis\n" >> {log}
+	claMLST search \
+	{params.dbct} \
+	{input} > {output.ct} 2>> {log}
 
-    echo -e "\nplasmid\n" >> {log}
-    claMLST search \
-    {params.dbplasmid} \
-    {input} > {output.plasmid} 2>> {log}
+	echo -e "\nplasmid\n" >> {log}
+	claMLST search \
+	{params.dbplasmid} \
+	{input} > {output.plasmid} 2>> {log}
 
-    touch {output.status}
-    """
+	touch {output.status}
+	"""	
+
+rule denovo_collate_coverage:
+	input:
+		status = expand(OUTDIR / "status" / "aligned.{sample}.txt", sample = SAMPLES),
+		coverages = expand(OUTDIR / "{sample}" / "coverage.{sample}.tsv", sample = SAMPLES),
+	output:
+		coverages = OUTDIR / "denovo.coverage.tsv",
+		status = OUTDIR / "status" / "denovo.collage.coverage.txt",
+	threads: 1
+	conda: "../envs/misc.yaml"
+	shell:"""
+	csvtk concat -C $ {input.coverages} >  {output.coverages}
+
+	touch {output.status}
+	"""

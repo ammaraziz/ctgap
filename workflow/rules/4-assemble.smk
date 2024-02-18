@@ -75,9 +75,9 @@ rule gapfiller:
 	# gap2seq will fail if filling fails.
 	# capture error, copy scaffolded as filled.
 	if [ $EXITCODE -eq 1 ]
-    then
-        cp {input.scaffold} {output.filled}
-    fi
+	then
+		cp {input.scaffold} {output.filled}
+	fi
 
 	touch {output.status}
 	"""
@@ -108,36 +108,53 @@ rule blastompa:
 	"""
 
 rule mlst:
-    input:
-        rules.gapfiller.output.filled
-    output:
-        generic = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
-        ct = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
-        plasmid =  OUTDIR / "{sample}" / "mlst" / "{sample}.genome.plasmid.mlst.txt",
-        status = OUTDIR / "status" / "mlst.{sample}.txt",
-    log: OUTDIR / "{sample}" / "log" / "mlst.{sample}.log"
-    benchmark: OUTDIR / "{sample}" / "benchmark" / "mlst.{sample}.txt"
-    conda: "../envs/mlst.yaml"
-    params:
-        dbgeneric = MLSTDBLOC / "chlamydiales",
-        dbct = MLSTDBLOC / "c.trachomatis",
-        dbplasmid = MLSTDBLOC / "plasmid",
-    threads: config["threads"]["mlst"]
-    shell:"""
-    echo -e "chlamydiales\n" >> {log}
-    claMLST search \
-    {params.dbgeneric} \
-    {input} > {output.generic} 2>> {log}
+	input:
+		rules.gapfiller.output.filled
+	output:
+		generic = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
+		ct = OUTDIR / "{sample}" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
+		plasmid =  OUTDIR / "{sample}" / "mlst" / "{sample}.genome.plasmid.mlst.txt",
+		status = OUTDIR / "status" / "mlst.{sample}.txt",
+	log: OUTDIR / "{sample}" / "log" / "mlst.{sample}.log"
+	benchmark: OUTDIR / "{sample}" / "benchmark" / "mlst.{sample}.txt"
+	conda: "../envs/mlst.yaml"
+	params:
+		dbgeneric = MLSTDBLOC / "chlamydiales",
+		dbct = MLSTDBLOC / "c.trachomatis",
+		dbplasmid = MLSTDBLOC / "plasmid",
+	threads: config["threads"]["mlst"]
+	shell:"""
+	echo -e "chlamydiales\n" >> {log}
+	claMLST search \
+	{params.dbgeneric} \
+	{input} > {output.generic} 2>> {log}
 
-    echo -e "\nctrachomatis\n" >> {log}
-    claMLST search \
-    {params.dbct} \
-    {input} > {output.ct} 2>> {log}
+	echo -e "\nctrachomatis\n" >> {log}
+	claMLST search \
+	{params.dbct} \
+	{input} > {output.ct} 2>> {log}
 
-    echo -e "\nplasmid\n" >> {log}
-    claMLST search \
-    {params.dbplasmid} \
-    {input} > {output.plasmid} 2>> {log}
+	echo -e "\nplasmid\n" >> {log}
+	claMLST search \
+	{params.dbplasmid} \
+	{input} > {output.plasmid} 2>> {log}
 
-    touch {output.status}
-    """
+	touch {output.status}
+	"""
+
+rule denovo_collate_blast:
+	input:
+		status_shovill = expand(OUTDIR / "status" / "blastn.{sample}.txt", sample = SAMPLES),
+	output:
+		tsv = OUTDIR / "denovo.blast.tsv",
+		status = OUTDIR / "status" / "denovo.collate.blast.txt",
+	params:
+		outdir = OUTDIR,
+		pattern = "**/blast/*.tab",
+	threads: 1
+	shell:"""
+	echo -e "query\tsubject\tpident\tlength\tmismatch\tgapopen\tquery_start\tquery_end\tsubject_start\tsubject_end\tevalue\tbitscore" > {output.tsv}
+	grep "" {params.outdir}/{params.pattern} >> {output.tsv}
+
+	touch {output.status}
+	"""
