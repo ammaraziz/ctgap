@@ -32,10 +32,10 @@ rule bowtie:
 	bowtie2 -x \
 	{params.prefix} \
 	-1 {input.r1} \
-	-2 {input.r2}\
+	-2 {input.r2} \
 	--threads {threads} | \
 	samtools view -bSh - | \
-	samtools sort -@{threads} \
+	samtools sort -n -@{threads} \
 	-o {output.bam} 2> {log} 1> {log}
 
 	samtools index {output.bam}
