@@ -1,4 +1,5 @@
-indir : /path/to/input
+indir:  /Users/aaziz/Downloads/ctgap_input
+#indir : /path/to/input
 outdir: /path/to/output
 sample_sheet: config/samples.csv
 

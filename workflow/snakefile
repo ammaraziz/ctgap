@@ -14,10 +14,10 @@ RESOURCES = Path(config["resourcesPath"])
 #misc
 MODE = config["mode"]
 ORG = config["organism"]
-REFSET = RESOURCES / ORG / "refset.fasta"
-ADAPTERS = RESOURCES / ORG / "adapters.fasta"
-BARCODES = RESOURCES / ORG / "barcodes.fasta"
-SCAFFOLDREF = RESOURCES / ORG / "scaffold.fasta"
+REFSET = RESOURCES / "references" / ORG / "refset.fasta"
+ADAPTERS = RESOURCES / "references" / ORG / "adapters.fasta"
+BARCODES = RESOURCES / "references" / ORG / "barcodes.fasta"
+SCAFFOLDREF = RESOURCES / "references" / ORG / "scaffold.fasta"
 
 # references
 HUMANREF = Path(config["homoReference"])
@@ -29,11 +29,11 @@ MLSTDB = Path(config["mlstDB"])
 
 # reference configuration
 if config["reference"] == "plurality":
-	REF = RESOURCES / ORG / "plurality.fasta"
+	REF = RESOURCES / "references" / ORG / "plurality.fasta"
 elif config["reference"] == "reference_set":
-	REF = RESOURCES / ORG / "refset.fasta"
+	REF = RESOURCES / "references" / ORG / "refset.fasta"
 else:
-	REF = RESOURCES / ORG / f"{config['reference']}"
+	REF = RESOURCES / "references" / ORG / f"{config['reference']}"
 
 # get samples
 SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
@@ -50,9 +50,9 @@ rule all:
 		OUTDIR / "status" / "denovo.collate.blast.txt",
 		expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
 		# ref-denovo
-		# expand(OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt", sample = SAMPLES),
-		# OUTDIR / "status" / "refdenovo.collage.coverage.txt",
-		# OUTDIR / "status" / "refdenovo.collate.blast.txt",
+		expand(OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt", sample = SAMPLES),
+		OUTDIR / "status" / "refdenovo.collage.coverage.txt",
+		OUTDIR / "status" / "refdenovo.collate.blast.txt",
 
 # common modules
 include: "rules/1-trim.smk"
