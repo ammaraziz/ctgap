@@ -69,4 +69,4 @@ elif config["mode"] == "both":
 	include: "rules/5-align.smk"
 
 # analysis module
-include: "rules/collate.smk"
+#include: "rules/collate.smk"

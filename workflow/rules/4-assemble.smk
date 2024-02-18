@@ -158,3 +158,24 @@ rule denovo_collate_blast:
 
 	touch {output.status}
 	"""
+
+rule denovo_collate_mlst:
+	input:
+		generic = expand(OUTDIR / "{sample}" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt", samples = SAMPLES),
+		ct = expand(OUTDIR / "{sample}" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt", samples = SAMPLES),
+		plasmid =  expand(OUTDIR / "{sample}" / "mlst" / "{sample}.genome.plasmid.mlst.txt", samples = SAMPLES),
+	output:
+		generic = OUTDIR / "mlst.generic.results.tsv",
+		cd = OUTDIR / "mlst.ct.results.tsv",
+		plasmid = OUTDIR / "mlst.plasmid.results.tsv",
+		status = OUTDIR / "status" / "mlst.collate.txt"
+	conda: "../envs/misc.yaml"
+	log: OUTDIR / "{sample}" / "log" / "mlst.collate.{sample}.log"
+	threads: 1
+	shell:"""
+	csvtk concat {input.generic} -o {output.generic}
+	csvtk concat {input.ct} -o {output.ct}
+	csvtk concat {input.plasmid} -o {output.plasmid}
+
+	touch {output.status}
+	"""

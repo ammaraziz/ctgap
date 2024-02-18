@@ -133,14 +133,14 @@ rule ref_scaffold:
 	output:
 		outdir = directory(OUTDIR / "{sample}" / "ref-denovo" / "scaffold"),
 		scaffold = OUTDIR / "{sample}" / "ref-denovo" / "scaffold" / "ragtag.scaffold.fasta",
-		status = OUTDIR / "status" / "ref-denovo_scaffold.{sample}.txt",
+		status = OUTDIR / "status" / "ref-denovo.scaffold.{sample}.txt",
 	params:
 		ref = SCAFFOLDREF,
 		min_len = 500
 	threads: config['threads']['ragtag']
 	conda: "../envs/scaffold.yaml"
 	log: OUTDIR / "{sample}" / "log" / "ref-denovo_scaffold.{sample}.log"
-	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo_scaffold.{sample}.txt"
+	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.scaffold.{sample}.txt"
 	shell:"""
 	ragtag.py scaffold \
 	{params.ref} \
@@ -247,8 +247,8 @@ rule ref_collate_coverage:
 	input:
 		coverages = expand(OUTDIR / "{sample}" / "ref-denovo" / "coverage.{sample}.tsv", sample = SAMPLES),
 	output:
-		coverages = OUTDIR / "denovo.coverage.tsv",
-		status = OUTDIR / "status" / "refdenovo.collage.coverage.txt",
+		coverages = OUTDIR / "ref-denovo.coverage.tsv",
+		status = OUTDIR / "status" / "ref-denovo.collage.coverage.txt",
 	threads: 1
 	conda: "../envs/misc.yaml"
 	shell:"""
@@ -261,8 +261,8 @@ rule ref_collate_blast:
 	input:
 		blast_status = expand(OUTDIR / "status" / "ref-denovo.blastn.{sample}.txt", sample = SAMPLES),
 	output:
-		tsv = OUTDIR / "refdenovo.blast.tsv",
-		status = OUTDIR / "status" / "refdenovo.collate.blast.txt",
+		tsv = OUTDIR / "ref-denovo.blast.tsv",
+		status = OUTDIR / "status" / "ref-denovo.collate.blast.txt",
 	params:
 		outdir = OUTDIR,
 		pattern = "**/blast/*.tab",
@@ -270,6 +270,27 @@ rule ref_collate_blast:
 	shell:"""
 	echo -e "query\tsubject\tpident\tlength\tmismatch\tgapopen\tquery_start\tquery_end\tsubject_start\tsubject_end\tevalue\tbitscore" > {output.tsv}
 	grep "" {params.outdir}/{params.pattern} >> {output.tsv}
+
+	touch {output.status}
+	"""
+
+rule ref_collate_mlst:
+	input:
+		generic = expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt", samples = SAMPLES),
+		ct = expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt", samples = SAMPLES),
+		plasmid =  expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.plasmid.mlst.txt", samples = SAMPLES),
+	output:
+		generic = OUTDIR / "mlst.generic.results.tsv",
+		cd = OUTDIR / "mlst.ct.results.tsv",
+		plasmid = OUTDIR / "mlst.plasmid.results.tsv",
+		status = OUTDIR / "status" / "mlst.collate.txt"
+	conda: "../envs/misc.yaml"
+	log: OUTDIR / "{sample}" / "log" / "ref-denovo.mlst.collate.{sample}.log"
+	threads: 1
+	shell:"""
+	csvtk concat {input.generic} -o {output.generic}
+	csvtk concat {input.ct} -o {output.ct}
+	csvtk concat {input.plasmid} -o {output.plasmid}
 
 	touch {output.status}
 	"""
