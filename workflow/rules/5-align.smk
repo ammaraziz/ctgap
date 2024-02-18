@@ -148,7 +148,7 @@ rule ref_gapfiller:
 	touch {output.status}
 	"""
 
-rule ref_blastompa:
+rule ref_blast_ompa:
 	input:
 		contig = rules.ref_gapfiller.output.filled,
 	output:
@@ -208,17 +208,33 @@ rule ref_mlst:
 	touch {output.status}
 	"""	
 
-rule denovo_collate_coverage:
+rule ref_collate_coverage:
 	input:
-		status = expand(OUTDIR / "status" / "aligned.{sample}.txt", sample = SAMPLES),
-		coverages = expand(OUTDIR / "{sample}" / "coverage.{sample}.tsv", sample = SAMPLES),
+		coverages = expand(OUTDIR / "{sample}" / "ref-denovo" / "coverage.{sample}.tsv", sample = SAMPLES),
 	output:
 		coverages = OUTDIR / "denovo.coverage.tsv",
-		status = OUTDIR / "status" / "denovo.collage.coverage.txt",
+		status = OUTDIR / "status" / "refdenovo.collage.coverage.txt",
 	threads: 1
 	conda: "../envs/misc.yaml"
 	shell:"""
 	csvtk concat -C $ {input.coverages} >  {output.coverages}
+
+	touch {output.status}
+	"""
+
+rule ref_collate_blast:
+	input:
+		blast_status = expand(OUTDIR / "status" / "ref-denovo.blastn.{sample}.txt", sample = SAMPLES),
+	output:
+		tsv = OUTDIR / "refdenovo.blast.tsv",
+		status = OUTDIR / "status" / "refdenovo.collate.blast.txt",
+	params:
+		outdir = OUTDIR,
+		pattern = "**/blast/*.tab",
+	threads: 1
+	shell:"""
+	echo -e "query\tsubject\tpident\tlength\tmismatch\tgapopen\tquery_start\tquery_end\tsubject_start\tsubject_end\tevalue\tbitscore" > {output.tsv}
+	grep "" {params.outdir}/{params.pattern} >> {output.tsv}
 
 	touch {output.status}
 	"""

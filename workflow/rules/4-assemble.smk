@@ -82,7 +82,7 @@ rule gapfiller:
 	touch {output.status}
 	"""
 
-rule blastompa:
+rule blast_ompa:
 	input:
 		contig = rules.gapfiller.output.filled,
 	output:
@@ -144,7 +144,7 @@ rule mlst:
 
 rule denovo_collate_blast:
 	input:
-		status_shovill = expand(OUTDIR / "status" / "blastn.{sample}.txt", sample = SAMPLES),
+		status_blast = expand(OUTDIR / "status" / "blastn.{sample}.txt", sample = SAMPLES),
 	output:
 		tsv = OUTDIR / "denovo.blast.tsv",
 		status = OUTDIR / "status" / "denovo.collate.blast.txt",
