@@ -178,4 +178,3 @@ rule denovo_collate_mlst:
 
 	touch {output.status}
 	"""
-
