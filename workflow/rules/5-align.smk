@@ -43,7 +43,6 @@ rule bowtie:
 	-o {output.bam} 2> {log} 1> {log}
 
 	samtools index {output.bam}
-	samtools coverage {output.bam} > {output.coverage}
 
 	touch {output.status}
 	"""
@@ -70,7 +69,7 @@ rule bowtie_ref24:
 	-2 {input.r2} \
 	--threads {threads} | \
 	samtools view -bSh - | \
-	samtools sort -n -@{threads} \
+	samtools sort -@{threads} \
 	-o {output.bam} 2> {log} 1> {log}
 
 	samtools index {output.bam}
