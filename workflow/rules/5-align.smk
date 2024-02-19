@@ -275,16 +275,15 @@ rule ref_collate_blast:
 
 rule ref_collate_mlst:
 	input:
-		generic = expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt", samples = SAMPLES),
-		ct = expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt", samples = SAMPLES),
-		plasmid =  expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.plasmid.mlst.txt", samples = SAMPLES),
+		generic = expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt", sample = SAMPLES),
+		ct = expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt", sample = SAMPLES),
+		plasmid =  expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.plasmid.mlst.txt", sample = SAMPLES),
 	output:
 		generic = OUTDIR / "mlst.generic.results.tsv",
 		cd = OUTDIR / "mlst.ct.results.tsv",
 		plasmid = OUTDIR / "mlst.plasmid.results.tsv",
 		status = OUTDIR / "status" / "mlst.collate.txt"
 	conda: "../envs/misc.yaml"
-	log: OUTDIR / "{sample}" / "log" / "ref-denovo.mlst.collate.{sample}.log"
 	threads: 1
 	shell:"""
 	csvtk concat {input.generic} -o {output.generic}

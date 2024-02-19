@@ -38,6 +38,7 @@ else:
 # get samples
 SAMPLE_NAME, PAIR = glob_wildcards(INDIR / "{sample_name}_{pair}.fastq.gz")
 SAMPLES = set(SAMPLE_NAME)
+
 # dictReads = parseSamples(SAMPLESHEET)
 # SAMPLES = list(dictReads.keys())
 if not SAMPLES:
@@ -47,13 +48,12 @@ if not SAMPLES:
 rule all:
 	input:
 		# denovo
-		OUTDIR / "status" / "denovo.collate.blast.txt",
-		expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
+		#OUTDIR / "status" / "denovo.collate.blast.txt",
+		#expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
 		# ref-denovo
 		expand(OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt", sample = SAMPLES),
-		OUTDIR / "status" / "refdenovo.collage.coverage.txt",
-		OUTDIR / "status" / "refdenovo.collate.blast.txt",
-
+		OUTDIR / "status" / "ref-denovo.collage.coverage.txt",
+		OUTDIR / "status" / "ref-denovo.collate.blast.txt",
 # common modules
 include: "rules/1-trim.smk"
 include: "rules/2-scrub.smk"
@@ -62,6 +62,7 @@ include: "rules/3-qc.smk"
 # modes module
 if config["mode"] == "denovo":
 	include: "rules/4-assemble.smk"
+	print("here2")
 elif config["mode"] == "ref-denovo":
 	include: "rules/5-align.smk"
 elif config["mode"] == "both":
