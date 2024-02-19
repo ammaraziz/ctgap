@@ -69,6 +69,3 @@ elif config["mode"] == "ref-denovo":
 elif config["mode"] == "both":
 	include: "rules/4-assemble.smk"
 	include: "rules/5-align.smk"
-
-# analysis module
-#include: "rules/collate.smk"
