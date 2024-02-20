@@ -66,12 +66,12 @@ rule gapfiller:
 	log: OUTDIR / "{sample}" / "log" / "gap2seq.{sample}.log"
 	benchmark: OUTDIR / "{sample}" / "benchmark" / "gap2seq.{sample}.txt"
 	shell:"""
-	EXITCODE=$(Gap2Seq.sh \
+	EXITCODE=$(Gap2Seq \
 	--scaffolds {input.scaffold} \
 	--filled {output.filled} \
 	--reads {input.r1},{input.r2} \
-	--nb-core {threads} 2>&1)
-
+	--threads {threads} 2> {log})
+	echo $EXITCODE
 	# gap2seq will fail if filling fails.
 	# capture error, copy scaffolded as filled.
 	if [ $EXITCODE -eq 1 ]

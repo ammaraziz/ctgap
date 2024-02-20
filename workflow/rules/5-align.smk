@@ -8,11 +8,13 @@ rule index:
 	params:
 		prefix_ref = REF.stem,
 		prefix_ref24 =  REFSET.stem,
+		loc_ref = REF.parent,
+		loc_ref24 = REFSET.parent,
 	threads: config["threads"]["bowtieindex"]
 	conda: "../envs/bowtie.yaml"
 	shell:"""
-	bowtie2-build --threads {threads} {input.reference} {params.prefix_ref} &> /dev/null
-	bowtie2-build --threads {threads} {input.refset24} {params.prefix_ref24} &> /dev/null
+	bowtie2-build --threads {threads} {input.reference} {params.loc_ref}/{params.prefix_ref} &> /dev/null
+	bowtie2-build --threads {threads} {input.refset24} {params.loc_ref24}/{params.prefix_ref24} &> /dev/null
 
 	touch {output.status}
 	"""
@@ -28,13 +30,14 @@ rule bowtie:
 		coverage = OUTDIR / "{sample}" / "ref-denovo" / "coverage.{sample}.tsv",
 		status = OUTDIR / "status" / "bowtie2.{sample}.txt",
 	params:
-		prefix = rules.index.params.prefix_ref
+		prefix = rules.index.params.prefix_ref,
+		loc = rules.index.params.loc_ref,
 	threads: config["threads"]["bowtie"]
 	log: OUTDIR / "{sample}" / "log" / "bowtie2.{sample}.log"
 	conda: "../envs/bowtie.yaml"
 	shell:"""
 	bowtie2 -x \
-	{params.prefix} \
+	{params.loc}/{params.prefix} \
 	-1 {input.r1} \
 	-2 {input.r2} \
 	--threads {threads} | \
@@ -58,13 +61,14 @@ rule bowtie_ref24:
 		coverage = OUTDIR / "{sample}" / "ref-denovo" / "coverage.ref24.{sample}.tsv",
 		status = OUTDIR / "status" / "bowtie2.ref24.{sample}.txt",
 	params:
-		prefix = rules.index.params.prefix_ref24
+		prefix = rules.index.params.prefix_ref24,
+		loc = rules.index.params.loc_ref24,
 	threads: config["threads"]["bowtie"]
 	log: OUTDIR / "{sample}" / "log" / "bowtie2.ref24.{sample}.log"
 	conda: "../envs/bowtie.yaml"
 	shell:"""
 	bowtie2 -x \
-	{params.prefix} \
+	{params.loc}/{params.prefix} \
 	-1 {input.r1} \
 	-2 {input.r2} \
 	--threads {threads} | \
@@ -170,7 +174,7 @@ rule ref_gapfiller:
 	--scaffolds {input.scaffold} \
 	--filled {output.filled} \
 	--reads {input.r1},{input.r2} \
-	--nb-core {threads} 2>&1)
+	--nb-core {threads} 2>&1 {log})
 
 	# gap2seq will fail if filling fails.
 	# capture error, copy scaffolded as filled.
