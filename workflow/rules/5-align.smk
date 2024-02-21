@@ -4,7 +4,7 @@ rule index:
 		reference = REF,
 		refset24 = REFSET,
 	output:
-		status = OUTDIR / "ref-denovo" / "status" / "references" / "reference.status"
+		status = OUTDIR /"status" / "reference.status"
 	params:
 		prefix_ref = REF.stem,
 		prefix_ref24 =  REFSET.stem,
@@ -27,7 +27,6 @@ rule bowtie:
 		status = rules.index.output.status,
 	output:
 		bam = OUTDIR / "{sample}" / "ref-denovo" / "{sample}.bam",
-		coverage = OUTDIR / "{sample}" / "ref-denovo" / "coverage.{sample}.tsv",
 		status = OUTDIR / "status" / "bowtie2.{sample}.txt",
 	params:
 		prefix = rules.index.params.prefix_ref,
@@ -42,8 +41,8 @@ rule bowtie:
 	-2 {input.r2} \
 	--threads {threads} | \
 	samtools view -bSh - | \
-	samtools sort -n -@{threads} \
-	-o {output.bam} 2> {log} 1> {log}
+	samtools sort -@{threads} \
+	-o {output.bam} 2> {log}
 
 	samtools index {output.bam}
 
@@ -63,6 +62,8 @@ rule bowtie_ref24:
 	params:
 		prefix = rules.index.params.prefix_ref24,
 		loc = rules.index.params.loc_ref24,
+		sample_name = lambda w: w.sample,
+		tmp = lambda w: OUTDIR / f"{w.sample}" / "ref-denovo" / "tmp.cov.tsv",
 	threads: config["threads"]["bowtie"]
 	log: OUTDIR / "{sample}" / "log" / "bowtie2.ref24.{sample}.log"
 	conda: "../envs/bowtie.yaml"
@@ -74,10 +75,12 @@ rule bowtie_ref24:
 	--threads {threads} | \
 	samtools view -bSh - | \
 	samtools sort -@{threads} \
-	-o {output.bam} 2> {log} 1> {log}
+	-o {output.bam} 2> {log}
 
 	samtools index {output.bam}
-	samtools coverage {output.bam} > {output.coverage}
+	samtools coverage {output.bam} > {params.tmp}
+
+	csvtk mutate2 -t -C $ {params.tmp} -n "sample_name" --at 1 -e " '{params.sample_name}' " > {output.coverage}
 
 	touch {output.status}
 	"""
@@ -125,7 +128,7 @@ rule ref_shovill:
 	--gsize {params.gsize} \
 	--depth {params.depth} \
 	--force \
-	--cpus {threads} 2>> {log} 1>> {log}
+	--cpus {threads} > {log} 2>&1
 
 	touch {output.status}
 	"""
@@ -163,22 +166,25 @@ rule ref_gapfiller:
 		r1 = rules.scrub.output.r1,
 		r2 = rules.scrub.output.r2,
 	output:
-		filled = OUTDIR / "{sample}" / "ref-denovo" / "gap2seq" / "filled.fasta",
+		filled = OUTDIR / "{sample}" / "ref-denovo" / "gap2seq" / "{sample}.fasta",
 		status = OUTDIR / "status" / "ref-denovo.gap2seq.{sample}.txt",
+	params:
+		sample_name = lambda w: w.sample,
+	shadow: "copy-minimal"
 	threads: config['threads']['gap2seq']
 	conda: "../envs/scaffold.yaml"
 	log: OUTDIR / "{sample}" / "log" / "ref-denovo.gap2seq.{sample}.log"
 	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.gap2seq.{sample}.txt"
 	shell:"""
-	EXITCODE=$(Gap2Seq.sh \
+	EXITCODE=$(Gap2Seq \
 	--scaffolds {input.scaffold} \
 	--filled {output.filled} \
 	--reads {input.r1},{input.r2} \
-	--nb-core {threads} 2>&1 {log})
+	--threads {threads} > {log} 2>&1)
 
 	# gap2seq will fail if filling fails.
 	# capture error, copy scaffolded as filled.
-	if [ $EXITCODE -eq 1 ]
+	if [ "$EXITCODE" = "1" ]
 	then
 		cp {input.scaffold} {output.filled}
 	fi
@@ -186,9 +192,20 @@ rule ref_gapfiller:
 	touch {output.status}
 	"""
 
+rule ref_rename:
+	input:
+		filled = rules.ref_gapfiller.output.filled
+	output:
+		renamed = OUTDIR / "{sample}" / "ref-denovo" / "{sample}.final.fasta",
+	conda: "../envs/misc.yaml"
+	shell:"""
+	seqkit replace -p "(.*)" -r "F3_contig{nr}" {input.filled} > {output.renamed} 
+	"""
+
+
 rule ref_blast_ompa:
 	input:
-		contig = rules.ref_gapfiller.output.filled,
+		contig = rules.ref_rename.output.rename,
 	output:
 		tab = OUTDIR / "{sample}" / "ref-denovo" / "blast" / "blast.ompa.tab",
 		status = OUTDIR / "status" / "ref-denovo.blastn.{sample}.txt"
@@ -206,19 +223,19 @@ rule ref_blast_ompa:
 	-max_target_seqs {params.targets} \
 	-html \
 	-outfmt {params.outfmt} \
-	-out {output.tab} 2> {log}
+	-out {output.tab} > {log} 2>&1
 
 	touch {output.status}
 	"""
 
 rule ref_mlst:
 	input:
-		rules.ref_gapfiller.output.filled,
+		rules.ref_rename.output.rename,
 	output:
 		generic = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
 		ct = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
 		plasmid =  OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.plasmid.mlst.txt",
-		status = OUTDIR / "status" / "ref-denovo.mlst.{sample}.txt",
+		status = OUTDIR / "{sample}" / "status" / "ref-denovo.mlst.{sample}.txt",
 	log: OUTDIR / "{sample}" / "log" / "ref-denovo.mlst.{sample}.log"
 	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.mlst.{sample}.txt"
 	conda: "../envs/mlst.yaml"
@@ -248,7 +265,7 @@ rule ref_mlst:
 
 rule ref_collate_coverage:
 	input:
-		coverages = expand(OUTDIR / "{sample}" / "ref-denovo" / "coverage.{sample}.tsv", sample = SAMPLES),
+		coverages = expand(OUTDIR / "{sample}" / "ref-denovo" / "coverage.ref24.{sample}.tsv", sample = SAMPLES),
 	output:
 		coverages = OUTDIR / "ref-denovo.coverage.tsv",
 		status = OUTDIR / "status" / "ref-denovo.collage.coverage.txt",
@@ -268,7 +285,7 @@ rule ref_collate_blast:
 		status = OUTDIR / "status" / "ref-denovo.collate.blast.txt",
 	params:
 		outdir = OUTDIR,
-		pattern = "**/blast/*.tab",
+		pattern = "**/ref-denovo/blast/*.tab",
 	threads: 1
 	shell:"""
 	echo -e "query\tsubject\tpident\tlength\tmismatch\tgapopen\tquery_start\tquery_end\tsubject_start\tsubject_end\tevalue\tbitscore" > {output.tsv}
@@ -283,9 +300,9 @@ rule ref_collate_mlst:
 		ct = expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt", sample = SAMPLES),
 		plasmid =  expand(OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.plasmid.mlst.txt", sample = SAMPLES),
 	output:
-		generic = OUTDIR / "mlst.generic.results.tsv",
-		cd = OUTDIR / "mlst.ct.results.tsv",
-		plasmid = OUTDIR / "mlst.plasmid.results.tsv",
+		generic = OUTDIR / "ref-denovo.mlst.generic.results.tsv",
+		ct = OUTDIR / "ref-denovo.mlst.ct.results.tsv",
+		plasmid = OUTDIR / "ref-denovo.mlst.plasmid.results.tsv",
 		status = OUTDIR / "status" / "mlst.collate.txt"
 	conda: "../envs/misc.yaml"
 	threads: 1
