@@ -5,7 +5,7 @@ rule fastp_qc:
 	output:
 		html = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub.html",
 		json = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub.json",
-		status = OUTDIR / "status" / "trim.scrub.{sample}.txt",
+		status = OUTDIR / "{sample}" / "status" / "trim.scrub.{sample}.txt",
 	threads: config["threads"]["fastp"]
 	conda: "../envs/trim.yaml"
 	log: OUTDIR / "{sample}" / "log" / "trim.scrub.{sample}.log"

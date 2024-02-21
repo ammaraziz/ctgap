@@ -7,7 +7,7 @@ rule scrub:
 		r2 = OUTDIR / "{sample}" / "scrub" / "{sample}_trim_scrub_R2.fastq.gz",
 		r1tmp = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub_first_R1.fastq.gz",
 		r2tmp = OUTDIR / "{sample}" / "scrub" / "{sample}_scrub_first_R2.fastq.gz",
-		status = OUTDIR / "status" / "scrub.{sample}.txt"
+		status = OUTDIR / "{sample}" / "status" / "scrub.{sample}.txt"
 	params:
 		db = KRAKENDB,
 		dbname = KRAKENDB.stem,
