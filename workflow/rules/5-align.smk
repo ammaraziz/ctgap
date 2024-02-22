@@ -205,7 +205,7 @@ rule ref_rename:
 
 rule ref_blast_ompa:
 	input:
-		contig = rules.ref_rename.output.rename,
+		contig = rules.ref_rename.output.renamed,
 	output:
 		tab = OUTDIR / "{sample}" / "ref-denovo" / "blast" / "blast.ompa.tab",
 		status = OUTDIR / "status" / "ref-denovo.blastn.{sample}.txt"
