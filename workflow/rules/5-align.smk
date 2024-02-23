@@ -170,7 +170,7 @@ rule ref_gapfiller:
 		status = OUTDIR / "status" / "ref-denovo.gap2seq.{sample}.txt",
 	params:
 		sample_name = lambda w: w.sample,
-	shadow: "copy-minimal"
+	shadow: "minimal"
 	threads: config['threads']['gap2seq']
 	conda: "../envs/scaffold.yaml"
 	log: OUTDIR / "{sample}" / "log" / "ref-denovo.gap2seq.{sample}.log"
@@ -197,9 +197,11 @@ rule ref_rename:
 		filled = rules.ref_gapfiller.output.filled
 	output:
 		renamed = OUTDIR / "{sample}" / "ref-denovo" / "{sample}.final.fasta",
+	params:
+		sample_name = lambda w: w.sample
 	conda: "../envs/misc.yaml"
 	shell:"""
-	seqkit replace -p "(.*)" -r "F3_contig{nr}" {input.filled} > {output.renamed} 
+	seqkit replace -p "(.*)" -r '{params.sample_name}_contig{{nr}}' {input.filled} > {output.renamed} 
 	"""
 
 
@@ -230,7 +232,7 @@ rule ref_blast_ompa:
 
 rule ref_mlst:
 	input:
-		rules.ref_rename.output.rename,
+		rules.ref_rename.output.renamed,
 	output:
 		generic = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.chlamydiales.mlst.txt",
 		ct = OUTDIR / "{sample}" / "ref-denovo" / "mlst" / "{sample}.genome.ctrachomatis.mlst.txt",
