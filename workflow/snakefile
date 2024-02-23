@@ -48,12 +48,12 @@ if not SAMPLES:
 rule all:
 	input:
 		# denovo
-		# OUTDIR / "status" / "denovo.collate.blast.txt",
-		# expand(OUTDIR / "status" / "mlst.{sample}.txt", sample = SAMPLES),
+		OUTDIR / "status" / "denovo.collate.blast.txt",
+		OUTDIR / "status" / "denovo.mlst.collate.txt",
 		# ref-denovo
 		OUTDIR / "status" / "ref-denovo.collage.coverage.txt",
 		OUTDIR / "status" / "ref-denovo.collate.blast.txt",
-		OUTDIR / "status" / "mlst.collate.txt",
+		OUTDIR / "status" / "ref-denovo.mlst.collate.txt",
 
 # common modules
 include: "rules/1-trim.smk"

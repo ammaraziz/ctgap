@@ -42,7 +42,7 @@ rule bowtie:
 	--threads {threads} | \
 	samtools view -bSh - | \
 	samtools sort -@{threads} \
-	-o {output.bam} 2> {log}
+	-o {output.bam} > {log} 2>&1
 
 	samtools index {output.bam}
 
@@ -75,7 +75,7 @@ rule bowtie_ref24:
 	--threads {threads} | \
 	samtools view -bSh - | \
 	samtools sort -@{threads} \
-	-o {output.bam} 2> {log}
+	-o {output.bam} > {log} 2>&1
 
 	samtools index {output.bam}
 	samtools coverage {output.bam} > {params.tmp}
@@ -114,8 +114,8 @@ rule ref_shovill:
 		outdir = directory(OUTDIR / "{sample}" / "ref-denovo" / "shovill"),
 		contig = OUTDIR / "{sample}" / "ref-denovo" / "shovill" / "contigs.fa",
 	params:
-		gsize = "1.04M",
-		depth = 200,
+		gsize = config['shovill']['gsize'],
+		depth = config['shovill']['downsample'],
 	conda: "../envs/shovill.yaml"
 	log: OUTDIR / "{sample}" / "log" / "ref-denovo.shovill.{sample}.log"
 	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.shovill.{sample}.txt"
@@ -142,7 +142,7 @@ rule ref_scaffold:
 		status = OUTDIR / "status" / "ref-denovo.scaffold.{sample}.txt",
 	params:
 		ref = SCAFFOLDREF,
-		min_len = 500
+		min_len = config['ragtag']['min_len']
 	threads: config['threads']['ragtag']
 	conda: "../envs/scaffold.yaml"
 	log: OUTDIR / "{sample}" / "log" / "ref-denovo_scaffold.{sample}.log"
@@ -168,8 +168,6 @@ rule ref_gapfiller:
 	output:
 		filled = OUTDIR / "{sample}" / "ref-denovo" / "gap2seq" / "{sample}.fasta",
 		status = OUTDIR / "status" / "ref-denovo.gap2seq.{sample}.txt",
-	params:
-		sample_name = lambda w: w.sample,
 	shadow: "minimal"
 	threads: config['threads']['gap2seq']
 	conda: "../envs/scaffold.yaml"
@@ -203,7 +201,6 @@ rule ref_rename:
 	shell:"""
 	seqkit replace -p "(.*)" -r '{params.sample_name}_contig{{nr}}' {input.filled} > {output.renamed} 
 	"""
-
 
 rule ref_blast_ompa:
 	input:
@@ -305,7 +302,7 @@ rule ref_collate_mlst:
 		generic = OUTDIR / "ref-denovo.mlst.generic.results.tsv",
 		ct = OUTDIR / "ref-denovo.mlst.ct.results.tsv",
 		plasmid = OUTDIR / "ref-denovo.mlst.plasmid.results.tsv",
-		status = OUTDIR / "status" / "mlst.collate.txt"
+		status = OUTDIR / "status" / "ref-denovo.mlst.collate.txt"
 	conda: "../envs/misc.yaml"
 	threads: 1
 	shell:"""

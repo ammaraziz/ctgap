@@ -1,5 +1,4 @@
-indir:  /Users/aaziz/Downloads/ctgap_input
-#indir : /path/to/input
+indir : /path/to/input
 outdir: /path/to/output
 sample_sheet: config/samples.csv
 
@@ -12,6 +11,14 @@ homoReference: resources/grch38.fasta.gzq
 krakenDB: resources/standardDB
 ompaBlastDB: resources/references/ct/ompaBlastDB/ompa20
 mlstDB: resources/references/ct/pubmlst/
+
+# shovill settings
+shovill:
+  gsize: "1.04M"
+  downsample: 200
+# ragtag
+ragtag:
+  min_len: 500
 
 # ensure conda is used without user having to specify
 use_conda: true
