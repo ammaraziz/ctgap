@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from rich import print as pprint
 
-configfile: "config/config.local.yaml"
+configfile: "config/config.yaml"
 include: "rules/common.smk"
 
 # inputs
@@ -42,7 +42,7 @@ SAMPLES = set(SAMPLE_NAME)
 # dictReads = parseSamples(SAMPLESHEET)
 # SAMPLES = list(dictReads.keys())
 if not SAMPLES:
-	pprint("[yellow]No input samples were detected. Check the files are named properly:[/yellow] [green bold]{sample_name}_{pair}[/green bold]")
+	pprint("[yellow]No samples were detected. Check sample sheet.[/yellow]")
 	sys.exit()
 
 rule all:

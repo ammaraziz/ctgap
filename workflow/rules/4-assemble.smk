@@ -192,3 +192,42 @@ rule denovo_collate_mlst:
 
 	touch {output.status}
 	"""
+
+rule create_gubbins_input:
+	input:
+		filled = expand(OUTDIR / "{sample}" / "denovo" / "gap2seq" / "filled.fasta", sample = SAMPLES)
+	output:
+		glist = OUTDIR / "denovo" / "gubbins" / "input.list",
+	params:
+		samples = SAMPLES
+	threads: 1
+	run:
+		for a,b in zip(input.filled, params.samples):
+			with open(output.glist, "w") as handle:
+				handle.write(f"{a}\t{b}\n")
+
+rule run_gubbins:
+	input:
+		glist = rules.create_gubbins_input.output.glist
+	output:
+		alignment = OUTDIR / "denovo" / "gubbins" / "alignment.fasta",
+		tree = OUTDIR / "denovo" / "gubbins" / f"{ORG}.final_tree.tre"
+	params:
+		reference = SCAFFOLDREF,
+		orgnaism = ORG,
+	conda: "../envs/gubbins.yaml"
+	log: OUTDIR / "denovo" / "gubbins" / "gubbins.log"
+	benchmark: OUTDIR / "denovo" / "gubbins" / "benchmark.gubbins.txt"
+	threads: config["threads"]["gubbins"]
+	shell:"""
+	generate_ska_alignment.py \
+	--reference {params.reference} \
+	--input {input.ginput} \
+	--out {output.alignment}
+
+	run_gubbins.py \
+	--prefix {params.organism} \
+	--tree-builder iqtree \
+	--outgroup \
+	{output.alignment}
+	"""
