@@ -202,6 +202,8 @@ rule create_gubbins_input:
 		samples = SAMPLES
 	threads: 1
 	run:
+		print(input.filled)
+		print(params.samples)
 		for a,b in zip(input.filled, params.samples):
 			with open(output.glist, "w") as handle:
 				handle.write(f"{a}\t{b}\n")
