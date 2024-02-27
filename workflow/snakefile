@@ -50,10 +50,11 @@ rule all:
 		# denovo
 		OUTDIR / "status" / "denovo.collate.blast.txt",
 		OUTDIR / "status" / "denovo.mlst.collate.txt",
+		OUTDIR / "denovo" / "gubbins" / "alignment.fasta",
 		# ref-denovo
-		OUTDIR / "status" / "ref-denovo.collage.coverage.txt",
-		OUTDIR / "status" / "ref-denovo.collate.blast.txt",
-		OUTDIR / "status" / "ref-denovo.mlst.collate.txt",
+		# OUTDIR / "status" / "ref-denovo.collage.coverage.txt",
+		# OUTDIR / "status" / "ref-denovo.collate.blast.txt",
+		# OUTDIR / "status" / "ref-denovo.mlst.collate.txt",
 
 # common modules
 include: "rules/1-trim.smk"
