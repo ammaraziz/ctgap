@@ -223,13 +223,15 @@ rule run_gubbins:
 	threads: config["threads"]["gubbins"]
 	shell:"""
 	generate_ska_alignment.py \
+	--threads {threads} \
 	--reference {params.reference} \
 	--input {input.ginput} \
 	--out {output.alignment}
 
 	run_gubbins.py \
+	--threads {threads} \
 	--prefix {params.organism} \
 	--tree-builder iqtree \
-	--outgroup \
+	--outgroup NC000117 \
 	{output.alignment}
 	"""
