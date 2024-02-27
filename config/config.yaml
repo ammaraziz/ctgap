@@ -37,3 +37,4 @@ threads:
   mlst: 1
   gap2seq: 10
   bedtools: 1
+  gubbins: 5
