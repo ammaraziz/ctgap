@@ -174,15 +174,15 @@ rule ref_gapfiller:
 	log: OUTDIR / "{sample}" / "log" / "ref-denovo.gap2seq.{sample}.log"
 	benchmark: OUTDIR / "{sample}" / "benchmark" / "ref-denovo.gap2seq.{sample}.txt"
 	shell:"""
-	EXITCODE=$(Gap2Seq \
+	Gap2Seq \
 	--scaffolds {input.scaffold} \
 	--filled {output.filled} \
 	--reads {input.r1},{input.r2} \
-	--threads {threads} > {log} 2>&1)
+	--threads {threads} > {log} 2>&1
 
 	# gap2seq will fail if filling fails.
 	# capture error, copy scaffolded as filled.
-	if [ "$EXITCODE" = "1" ]
+	if [ $? -ne 0 ]
 	then
 		cp {input.scaffold} {output.filled}
 	fi
