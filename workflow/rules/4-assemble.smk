@@ -68,15 +68,17 @@ rule gapfiller:
 	log: OUTDIR / "{sample}" / "log" / "denovo.gap2seq.{sample}.log"
 	benchmark: OUTDIR / "{sample}" / "benchmark" / "denovo.gap2seq.{sample}.txt"
 	shell:"""
+	set +e
 	Gap2Seq \
 	--scaffolds {input.scaffold} \
 	--filled {output.filled} \
 	--reads {input.r1},{input.r2} \
-	--threads {threads}  > {log} 2>&1
+	--threads {threads}	> {log} 2>&1
+	exitcode=$?
 
 	# gap2seq will fail if filling fails.
 	# capture error, copy scaffolded as filled.
-	if [ $? -ne 0 ]
+	if [ $exitcode -ne 0 ]
 	then
 		cp {input.scaffold} {output.filled}
 	fi
@@ -193,45 +195,38 @@ rule denovo_collate_mlst:
 	touch {output.status}
 	"""
 
-rule create_gubbins_input:
+rule ska_input_prep:
 	input:
 		filled = expand(OUTDIR / "{sample}" / "denovo" / "gap2seq" / "filled.fasta", sample = SAMPLES)
 	output:
-		glist = OUTDIR / "denovo" / "gubbins" / "input.list",
+		glist = OUTDIR / "denovo" / "tree" / "input.list",
 	params:
 		samples = SAMPLES
-	threads: 1
+	threads: 10
 	run:
 		print(input.filled)
 		print(params.samples)
-		for a,b in zip(input.filled, params.samples):
+		for f,s in zip(input.filled, params.samples):
 			with open(output.glist, "w") as handle:
-				handle.write(f"{a}\t{b}\n")
+				handle.write(f"{s}\t{f}\n")
 
-rule run_gubbins:
+rule ska_alignment:
 	input:
-		glist = rules.create_gubbins_input.output.glist
+		glist = rules.ska_input_prep.output.glist
 	output:
-		alignment = OUTDIR / "denovo" / "gubbins" / "alignment.fasta",
-		tree = OUTDIR / "denovo" / "gubbins" / f"{ORG}.final_tree.tre"
+		alignment = OUTDIR / "denovo" / "tree" / "alignment.fasta",
+		tree = OUTDIR / "denovo" / "tree" / f"{ORG}.final_tree.tre"
 	params:
 		reference = SCAFFOLDREF,
-		orgnaism = ORG,
-	conda: "../envs/gubbins.yaml"
-	log: OUTDIR / "denovo" / "gubbins" / "gubbins.log"
-	benchmark: OUTDIR / "denovo" / "gubbins" / "benchmark.gubbins.txt"
-	threads: config["threads"]["gubbins"]
+		organism = ORG,
+	conda: "../envs/tree.yaml"
+	log: OUTDIR / "denovo" / "tree" / "tree.log"
+	benchmark: OUTDIR / "denovo" / "tree" / "benchmark.tree.txt"
+	threads: config["threads"]["tree"]
 	shell:"""
-	generate_ska_alignment.py \
+	scripts/generate_ska_alignment.py \
 	--threads {threads} \
 	--reference {params.reference} \
-	--input {input.ginput} \
+	--input {input.glist} \
 	--out {output.alignment}
-
-	run_gubbins.py \
-	--threads {threads} \
-	--prefix {params.organism} \
-	--tree-builder iqtree \
-	--outgroup NC000117 \
-	{output.alignment}
 	"""

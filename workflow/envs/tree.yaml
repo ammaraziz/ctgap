@@ -1,8 +1,7 @@
-name: ctgap_gubbins
+name: ctgap_tree
 channels:
-  - r
-  - defaults
   - conda-forge
   - bioconda
 dependencies:
-  - gubbins
+  - iqtree
+  - ska2

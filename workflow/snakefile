@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from rich import print as pprint
 
-configfile: "config/config.yaml"
+configfile: "config/config.local.yaml"
 include: "rules/common.smk"
 
 # inputs
