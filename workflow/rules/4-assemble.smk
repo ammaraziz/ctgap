@@ -215,14 +215,12 @@ rule ska_alignment:
 		glist = rules.ska_input_prep.output.glist
 	output:
 		alignment = OUTDIR / "denovo" / "tree" / "alignment.fasta",
-		tree = OUTDIR / "denovo" / "tree" / f"{ORG}.final_tree.tre"
 	params:
 		reference = SCAFFOLDREF,
 		organism = ORG,
 	conda: "../envs/tree.yaml"
-	log: OUTDIR / "denovo" / "tree" / "tree.log"
-	benchmark: OUTDIR / "denovo" / "tree" / "benchmark.tree.txt"
-	threads: config["threads"]["tree"]
+	log: OUTDIR / "denovo" / "tree" / "ska.log"
+	threads: config["threads"]["ska"]
 	shell:"""
 	scripts/generate_ska_alignment.py \
 	--threads {threads} \
@@ -230,3 +228,27 @@ rule ska_alignment:
 	--input {input.glist} \
 	--out {output.alignment}
 	"""
+
+rule tree:
+	input:
+		alignment = rules.ska_alignment.output.alignment
+	output:
+		tree = OUTDIR / "denovo" / "tree" / f"{ORG}.tre"
+	params:
+		model = "GTR",
+		replicates = 1000,
+		prefix = ORG
+	conda: "../envs/tree.yaml"
+	threads: config["threads"]["tree"]
+	log: OUTDIR / "denovo" / "tree" / "ska.log"
+	shell:"""
+	iqtree \
+	-T AUTO \
+	--prefix {params.prefix} \
+	--threads-max {threads} \
+	-s {input.alignment} \
+	-m {params.model} \
+	-alrt {params.model} \
+	-B {params.model}
+	"""
+	

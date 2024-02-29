@@ -37,4 +37,5 @@ threads:
   mlst: 1
   gap2seq: 10
   bedtools: 1
+  ska: 5
   tree: 5
