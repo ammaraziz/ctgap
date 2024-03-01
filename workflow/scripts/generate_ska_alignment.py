@@ -1,4 +1,4 @@
-#! python
+#!/usr/bin/env python3
 
 # from https://github.com/nickjcroucher/gubbins
 #
@@ -87,7 +87,6 @@ if __name__ == "__main__":
     if which('ska') is None:
         sys.stderr.write('ska2 cannot be found on PATH; install with "conda install ska2"')
         sys.exit(1)
-
     # Check if k value is acceptable:
     if (args.k % 2) == 0 or args.k < 5 or args.k > 63:
         sys.stderr.write('k must be odd and between 5 and 63\n')
@@ -114,7 +113,7 @@ if __name__ == "__main__":
         sys.exit(1)
                             
     # Clean alignment to prep for Gubbins
-    subprocess.check_output('gubbins_alignment_checker.py --aln ' + tmp_aln + ' --out-aln '  + args.out + \
+    subprocess.check_output('workflow/scripts/gubbins_alignment_checker.py --aln ' + tmp_aln + ' --out-aln '  + args.out + \
                              ' --out ' + args.out + '.csv',
                             shell = True)
     

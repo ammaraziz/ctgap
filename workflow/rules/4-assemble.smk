@@ -197,24 +197,23 @@ rule denovo_collate_mlst:
 
 rule ska_input_prep:
 	input:
-		filled = expand(OUTDIR / "{sample}" / "denovo" / "gap2seq" / "filled.fasta", sample = SAMPLES)
+		filled = expand(OUTDIR / "{sample}" / "denovo" / "gap2seq" / "filled.fasta", sample = SAMPLES),
+		individual = INDIVIDUAL,
 	output:
-		glist = OUTDIR / "denovo" / "tree" / "input.list",
+		glist = OUTDIR / "tree" / "input.list",
 	params:
-		samples = SAMPLES
+		samples = SAMPLES,
 	threads: 10
 	run:
-		print(input.filled)
-		print(params.samples)
-		for f,s in zip(input.filled, params.samples):
-			with open(output.glist, "w") as handle:
+		for f,s in zip(input.filled + list(INDIVIDUAL_DICT.values()), list(params.samples) + list(INDIVIDUAL_DICT.keys())):
+			with open(output.glist, "a") as handle:
 				handle.write(f"{s}\t{f}\n")
 
 rule ska_alignment:
 	input:
-		glist = rules.ska_input_prep.output.glist
+		glist = rules.ska_input_prep.output.glist,
 	output:
-		alignment = OUTDIR / "denovo" / "tree" / "alignment.fasta",
+		alignment = OUTDIR / "tree" / "ska_alignment.fasta",
 	params:
 		reference = SCAFFOLDREF,
 		organism = ORG,
@@ -222,33 +221,30 @@ rule ska_alignment:
 	log: OUTDIR / "denovo" / "tree" / "ska.log"
 	threads: config["threads"]["ska"]
 	shell:"""
-	scripts/generate_ska_alignment.py \
-	--threads {threads} \
-	--reference {params.reference} \
+	workflow/scripts/generate_ska_alignment.py \
 	--input {input.glist} \
-	--out {output.alignment}
+	--out {output.alignment} \
+	--reference {params.reference} \
+	--threads {threads} > {log} 2>&1
 	"""
 
 rule tree:
 	input:
 		alignment = rules.ska_alignment.output.alignment
 	output:
-		tree = OUTDIR / "denovo" / "tree" / f"{ORG}.tre"
+		tree = OUTDIR / "tree" / f"{ORG}.tree"
 	params:
-		model = "GTR",
 		replicates = 1000,
 		prefix = ORG
 	conda: "../envs/tree.yaml"
 	threads: config["threads"]["tree"]
-	log: OUTDIR / "denovo" / "tree" / "ska.log"
+	log: OUTDIR / "denovo" / "tree" / "iqtree.log"
 	shell:"""
-	iqtree \
-	-T AUTO \
-	--prefix {params.prefix} \
-	--threads-max {threads} \
-	-s {input.alignment} \
-	-m {params.model} \
-	-alrt {params.model} \
-	-B {params.model}
+	augur tree \
+	--alignment {input.alignment} \
+	--output {output.tree} \
+	--override-default-args \
+	--tree-builder-args="-alrt {params.replicates} -B {params.replicates}" \
+	--nthreads {threads} > {log} 2>&1
 	"""
 	

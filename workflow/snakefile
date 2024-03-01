@@ -18,6 +18,8 @@ REFSET = RESOURCES / "references" / ORG / "refset.fasta"
 ADAPTERS = RESOURCES / "references" / ORG / "adapters.fasta"
 BARCODES = RESOURCES / "references" / ORG / "barcodes.fasta"
 SCAFFOLDREF = RESOURCES / "references" / ORG / "scaffold.fasta"
+INDIVIDUAL = (RESOURCES / "references" / ORG / "individual").glob("*")
+INDIVIDUAL_DICT = {n.stem:str(n.resolve()) for n in INDIVIDUAL}
 
 # references
 HUMANREF = Path(config["homoReference"])
@@ -50,7 +52,8 @@ rule all:
 		# denovo
 		OUTDIR / "status" / "denovo.collate.blast.txt",
 		OUTDIR / "status" / "denovo.mlst.collate.txt",
-		OUTDIR / "denovo" / "gubbins" / "alignment.fasta",
+		OUTDIR / "tree" / "ska_alignment.fasta",
+		OUTDIR / "tree" / f"{ORG}.tree",
 		# ref-denovo
 		# OUTDIR / "status" / "ref-denovo.collage.coverage.txt",
 		# OUTDIR / "status" / "ref-denovo.collate.blast.txt",
